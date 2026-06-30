@@ -109,8 +109,8 @@ export async function onRequest(context) {
          --primary: #111111;
          --primary-hover: #222222;
          --primary-text: #ffffff;
-         --upload-bg: #fafafa;
-         --upload-hover: #f4f4f5;
+         --generate-bg: #fafafa;
+         --generate-hover: #f4f4f5;
          --success: #10b981;
          --error: #ef4444;
          --error-bg: rgba(239, 68, 68, 0.08);
@@ -126,8 +126,8 @@ export async function onRequest(context) {
          --primary: #fafafa;
          --primary-hover: #e4e4e7;
          --primary-text: #09090b;
-         --upload-bg: #18181b;
-         --upload-hover: #27272a;
+         --generate-bg: #18181b;
+         --generate-hover: #27272a;
          --success: #34d399;
          --error: #f87171;
          --error-bg: rgba(248, 113, 113, 0.08);
@@ -193,7 +193,7 @@ export async function onRequest(context) {
       }
 
       .theme-toggle-btn:hover:not(:disabled) {
-         background-color: var(--upload-hover);
+         background-color: var(--generate-hover);
          color: var(--text-main);
          border-color: var(--text-muted);
       }
@@ -245,11 +245,11 @@ export async function onRequest(context) {
          font-weight: 400;
       }
 
-      .upload-area {
+      .generate-area {
          border: 1.5px dashed var(--border);
          border-radius: 8px;
          padding: 2.5rem 1.5rem;
-         background-color: var(--upload-bg);
+         background-color: var(--generate-bg);
          display: flex;
          flex-direction: column;
          align-items: center;
@@ -266,7 +266,7 @@ export async function onRequest(context) {
          width: 100%;
       }
 
-      .upload-icon {
+      .generate-icon {
          font-size: 44px;
          color: var(--error);
          margin-bottom: 1rem;
@@ -328,9 +328,9 @@ export async function onRequest(context) {
          <p class="subtitle">The page you are looking for does not exist</p>
       </header>
 
-      <div class="upload-area">
+      <div class="generate-area">
          <div class="dropzone-prompt">
-            <i class="bi bi-file-earmark-x upload-icon"></i>
+            <i class="bi bi bi-x-circle generate-icon"></i>
             <span id="fileLabel">Oops! Access Denied or Missing</span>
             <span class="max-size-info">Make sure the URL is correct</span>
          </div>

@@ -19,8 +19,8 @@
          --primary: #111111;
          --primary-hover: #222222;
          --primary-text: #ffffff;
-         --upload-bg: #fafafa;
-         --upload-hover: #f4f4f5;
+         --generate-bg: #fafafa;
+         --generate-hover: #f4f4f5;
          --file-info-bg: #f4f4f5;
          --result-bg: #fafafa;
          --result-border: #e5e5e5;
@@ -42,8 +42,8 @@
          --primary: #fafafa;
          --primary-hover: #e4e4e7;
          --primary-text: #09090b;
-         --upload-bg: #18181b;
-         --upload-hover: #27272a;
+         --generate-bg: #18181b;
+         --generate-hover: #27272a;
          --file-info-bg: #27272a;
          --result-bg: #09090b;
          --result-border: #27272a;
@@ -115,7 +115,7 @@
       }
 
       .theme-toggle-btn:hover:not(:disabled) {
-         background-color: var(--upload-hover);
+         background-color: var(--generate-hover);
          color: var(--text-main);
          border-color: var(--text-muted);
       }
@@ -175,7 +175,7 @@
       .input-area input,
       .input-area textarea {
          width: 100%;
-         background-color: var(--upload-bg);
+         background-color: var(--generate-bg);
          border: 1.5px solid var(--border);
          border-radius: 8px;
          padding: 1rem 1.25rem;
@@ -195,7 +195,7 @@
       .input-area input:focus,
       .input-area textarea:focus {
          border-color: var(--text-main);
-         background-color: var(--upload-hover);
+         background-color: var(--generate-hover);
       }
 
       .input-area input::placeholder,
@@ -227,7 +227,7 @@
       }
 
       .btn:disabled {
-         background-color: var(--upload-bg);
+         background-color: var(--generate-bg);
          border-color: var(--border);
          color: var(--text-muted);
          cursor: not-allowed;
