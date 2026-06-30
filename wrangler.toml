@@ -1,0 +1,13 @@
+name = 'secure-signed'
+
+compatibility_date = '2026-06-30'
+
+pages_build_output_dir = './public'
+
+[[d1_databases]]
+binding = 'DB'
+database_name = 'secure_signed'
+database_id = '4c300c60-53f6-4700-a182-397e83580fc3'
+
+[limits]
+cpu_ms = 300_000
