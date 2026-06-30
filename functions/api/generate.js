@@ -5,11 +5,11 @@ export async function onRequestPost(context) {
 
    try {
       const body = await request.json()
-      const { url, headers } = body
+      const { url, headers, filename } = body
       const createdAt = body.created_at || Date.now()
 
       if (!url) {
-         return new Response(JSON.stringify({ error: 'URL is required' }), {
+         return new Response(JSON.stringify({ status: false, error: 'URL is required' }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' }
          })
@@ -19,9 +19,9 @@ export async function onRequestPost(context) {
       const sign = generateRandomString(8)
 
       await db.prepare(
-         'INSERT INTO downloads (token, sign, url, headers, created_at) VALUES (?, ?, ?, ?, ?)'
+         'INSERT INTO downloads (token, sign, url, headers, created_at, filename) VALUES (?, ?, ?, ?, ?, ?)'
       )
-         .bind(token, sign, url, JSON.stringify(headers || {}), createdAt)
+         .bind(token, sign, url, JSON.stringify(headers || {}), createdAt, filename || null)
          .run()
 
       const validityMs = parseValidity(validityStr)
@@ -34,17 +34,19 @@ export async function onRequestPost(context) {
       const downloadUrl = `${requestUrl.protocol}//${requestUrl.host}/${token}/${sign}`
 
       return new Response(JSON.stringify({
-         success: true,
-         token,
-         sign,
-         download_url: downloadUrl,
-         expires_at: createdAt + validityMs
+         status: true,
+         data: {
+            token,
+            sign,
+            download_url: downloadUrl,
+            expires_at: createdAt + validityMs
+         }
       }), {
          headers: { 'Content-Type': 'application/json' }
       })
 
    } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), {
+      return new Response(JSON.stringify({ status: false, error: err.message }), {
          status: 500,
          headers: { 'Content-Type': 'application/json' }
       })

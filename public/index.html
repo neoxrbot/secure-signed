@@ -351,6 +351,9 @@
          <div class="input-area" style="margin-bottom: 1rem">
             <input type="url" name="url" id="urlInput" placeholder="Enter target download URL..." required>
          </div>
+         <div class="input-area" style="margin-bottom: 1rem">
+            <input type="text" name="filename" id="filenameInput" placeholder="Filename e.g. image.jpg (Optional)">
+         </div>
          <div class="input-area">
             <textarea name="headers" id="headersInput"
                placeholder="Custom Headers JSON (Optional)&#10;e.g. {&quot;Authorization&quot;: &quot;Bearer token&quot;}"></textarea>
@@ -365,8 +368,8 @@
             <i class="bi bi-check2-circle"></i>
             Link Generated Successfully!
          </span>
-         <div class="result-item" id="resultItemDetail"><strong>Expires:</strong> <span id="expireTime">-</span></div>
-         <div class="result-item"><strong>Secure Link:</strong></div>
+         <div class="result-item" id="resultItemDetail"><strong>Expires :</strong> <span id="expireTime">-</span></div>
+         <div class="result-item"><strong>Secure Link :</strong></div>
          <div class="result-link-container">
             <a href="#" id="fileLink" target="_blank"></a>
             <button type="button" class="copy-btn" id="copyBtn">Copy</button>
@@ -377,6 +380,7 @@
    <script>
       const generateForm = document.getElementById('generateForm')
       const urlInput = document.getElementById('urlInput')
+      const filenameInput = document.getElementById('filenameInput')
       const headersInput = document.getElementById('headersInput')
       const generateBtn = document.getElementById('generateBtn')
       const resultDiv = document.getElementById('result')
@@ -420,6 +424,7 @@
       generateForm.addEventListener('submit', async (e) => {
          e.preventDefault()
          const urlValue = urlInput.value
+         const filenameValue = filenameInput.value.trim()
          const headersValue = headersInput.value.trim()
 
          resultDiv.style.display = 'none'
@@ -447,17 +452,18 @@
                },
                body: JSON.stringify({
                   url: urlValue,
+                  filename: filenameValue || null,
                   headers: parsedHeaders
                })
             })
             const json = await response.json()
 
-            if (json.success) {
+            if (json.status) {
                resultDiv.style.display = 'block'
-               fileLink.href = json.download_url
-               fileLink.textContent = json.download_url
+               fileLink.href = json.data.download_url
+               fileLink.textContent = json.data.download_url
 
-               const expiryDate = new Date(json.expires_at)
+               const expiryDate = new Date(json.data.expires_at)
                expireTime.textContent = expiryDate.toLocaleTimeString() + ' (' + expiryDate.toLocaleDateString() + ')'
                generateForm.reset()
             } else {

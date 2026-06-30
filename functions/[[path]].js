@@ -12,7 +12,7 @@ export async function onRequestGet(context) {
 
    try {
       const record = await db.prepare(
-         'SELECT url, headers, created_at FROM downloads WHERE token = ? AND sign = ?'
+         'SELECT url, headers, created_at, filename FROM downloads WHERE token = ? AND sign = ?'
       )
          .bind(token, sign)
          .first()
@@ -49,7 +49,6 @@ export async function onRequestGet(context) {
       const headersToForward = [
          'content-type',
          'content-length',
-         'content-disposition',
          'accept-ranges',
          'cache-control'
       ]
@@ -60,11 +59,17 @@ export async function onRequestGet(context) {
          }
       }
 
-      if (!responseHeaders.has('content-disposition')) {
+      let disposition = ''
+      if (record.filename) {
+         disposition = `attachment; filename="${record.filename}"`
+      } else if (targetResponse.headers.has('content-disposition')) {
+         disposition = targetResponse.headers.get('content-disposition')
+      } else {
          const urlObj = new URL(record.url)
          const fileName = urlObj.pathname.split('/').pop() || 'download'
-         responseHeaders.set('content-disposition', `attachment; filename="${fileName}"`)
+         disposition = `attachment; filename="${fileName}"`
       }
+      responseHeaders.set('content-disposition', disposition)
 
       return new Response(targetResponse.body, {
          status: targetResponse.status,

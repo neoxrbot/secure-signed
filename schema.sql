@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS downloads (
   token TEXT PRIMARY KEY,
   sign TEXT NOT NULL,
   url TEXT NOT NULL,
+  filename TEXT NOT NULL,
   headers TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
