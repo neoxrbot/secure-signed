@@ -1,12 +1,14 @@
 export async function onRequestGet(context) {
    const { env, params } = context
    const db = env.DB
-   const { token, sign } = params
+   const path = params.path || []
    const validityStr = env.VALIDITY || '30m'
 
-   if (!token || !sign) {
-      return new Response('Invalid Request', { status: 400 })
+   if (path.length !== 2) {
+      return context.next()
    }
+
+   const [token, sign] = path
 
    try {
       const record = await db.prepare(
