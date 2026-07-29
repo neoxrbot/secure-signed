@@ -12,5 +12,6 @@
     "nuxt": "^3.12.4",
     "vue": "^3.4.31"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "packageManager": "yarn@1.22.22"
 }

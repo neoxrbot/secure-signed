@@ -4,6 +4,7 @@ export default defineNuxtConfig({
    nitro: {
       preset: 'cloudflare-pages'
    },
+   srcDir: '.',
    app: {
       head: {
          title: 'Secure Link Generator',
