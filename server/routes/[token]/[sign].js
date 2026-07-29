@@ -1,4 +1,4 @@
-import { getCloudflareEnv, getWaitUntil, parseValidity } from '../../../utils/downloads.js'
+import { getCloudflareEnv, parseValidity, waitUntil } from '../../../utils/downloads.js'
 
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
       const isExpired = Date.now() - record.created_at > validityMs
 
       if (isExpired) {
-         getWaitUntil(event)(
+         waitUntil(event,
             db.prepare('DELETE FROM downloads WHERE token = ?').bind(token).run()
          )
          throw createError({ statusCode: 404, statusMessage: 'Not Found' })

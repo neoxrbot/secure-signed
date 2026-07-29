@@ -25,8 +25,18 @@ export function parseValidity(validityStr = '30m') {
    }
 }
 
-export function getWaitUntil(event) {
-   return event.context.cloudflare?.context?.waitUntil || event.waitUntil || ((promise) => promise)
+export function waitUntil(event, promise) {
+   const cloudflareContext = event.context.cloudflare?.context
+
+   if (cloudflareContext?.waitUntil) {
+      return cloudflareContext.waitUntil(promise)
+   }
+
+   if (event.waitUntil) {
+      return event.waitUntil(promise)
+   }
+
+   return promise
 }
 
 export function createJsonResponse(body, status = 200) {

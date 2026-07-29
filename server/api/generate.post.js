@@ -1,4 +1,4 @@
-import { createJsonResponse, generateRandomString, getCloudflareEnv, getWaitUntil, parseValidity } from '../../utils/downloads.js'
+import { createJsonResponse, generateRandomString, getCloudflareEnv, parseValidity, waitUntil } from '../../utils/downloads.js'
 
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
 
       const validityMs = parseValidity(validityStr)
       const expiredTimestamp = Date.now() - validityMs
-      getWaitUntil(event)(
+      waitUntil(event,
          db.prepare('DELETE FROM downloads WHERE created_at < ?').bind(expiredTimestamp).run()
       )
 
