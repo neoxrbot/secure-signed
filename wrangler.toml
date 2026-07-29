@@ -9,8 +9,8 @@ VALIDITY = '30m'
 
 [[d1_databases]]
 binding = 'DB'
-database_name = 'securely'
-database_id = '7c180c0c-b919-401f-b258-b4b47276fa63'
+database_name = 'secure_signed'
+database_id = '4c300c60-53f6-4700-a182-397e83580fc3'
 
 [limits]
 cpu_ms = 300_000
