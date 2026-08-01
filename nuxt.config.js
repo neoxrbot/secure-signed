@@ -48,8 +48,7 @@ export default defineNuxtConfig({
             title: 'Neoxr API',
             description: 'Cheap, fast, and developer-ready Web APIs. Integrate in minutes, scale with ease.',
             link: 'https://api.neoxr.eu'
-         },
-         challengePassword: 'rxeon'
+         }
       }
    }
 })
