@@ -48,20 +48,20 @@
                      <div class="tool-badge"><i class="bi bi-cpu-fill"></i></div>
                      <div>
                         <h6 class="tool-title mb-0">Services</h6>
-                        <span class="tool-subtitle">Select action</span>
+                        <span class="tool-subtitle">Select action tab</span>
                      </div>
                   </div>
                   <div class="nav-segmented">
                      <button class="nav-segmented-btn" :class="{ 'active': activeView === 'upload' }"
-                        @click="switchTab('upload')">
+                        @click="switchTab('upload')" :disabled="isUploading">
                         <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload
                      </button>
                      <button class="nav-segmented-btn" :class="{ 'active': activeView === 'sign' }"
-                        @click="switchTab('sign')">
+                        @click="switchTab('sign')" :disabled="isUploading">
                         <i class="bi bi-shield-lock-fill me-1"></i> Sign
                      </button>
                      <button class="nav-segmented-btn" :class="{ 'active': activeView === 'shorten' }"
-                        @click="switchTab('shorten')">
+                        @click="switchTab('shorten')" :disabled="isUploading">
                         <i class="bi bi-link-45deg me-1"></i> Shorten
                      </button>
                   </div>
@@ -75,30 +75,33 @@
                               <div class="d-flex justify-content-between align-items-center mb-2">
                                  <label
                                     class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">File
-                                    Selection</label>
-                                 <span class="fs-xs text-muted" v-if="fileQueue.length">{{ fileQueue.length }} item(s) •
-                                    {{ formatBytes(totalUploadBytes) }}</span>
+                                    Selection (Max 10)</label>
+                                 <span class="fs-xs text-muted" v-if="fileQueue.length">{{ fileQueue.length }}/10
+                                    item(s) • {{ formatBytes(totalUploadBytes) }}</span>
                               </div>
 
-                              <div class="upload-dropzone" :class="{ 'is-dragging': isDragging }"
-                                 @click="triggerFileInput" @dragover.prevent="isDragging = true"
-                                 @dragleave.prevent="isDragging = false" @drop.prevent="handleDrop">
+                              <div class="upload-dropzone"
+                                 :class="{ 'is-dragging': isDragging, 'is-disabled': isUploading }"
+                                 @click="!isUploading && triggerFileInput()"
+                                 @dragover.prevent="!isUploading && (isDragging = true)"
+                                 @dragleave.prevent="isDragging = false"
+                                 @drop.prevent="!isUploading && handleDrop($event)">
                                  <input type="file" ref="fileInputRef" @change="handleFileChange" class="d-none"
-                                    multiple>
+                                    multiple :disabled="isUploading">
                                  <div class="dropzone-inner text-center">
                                     <div class="upload-icon-circle mb-2">
                                        <i class="bi bi-cloud-plus-fill"></i>
                                     </div>
                                     <h6 class="fw-bold mb-1 text-color">Drop files here or click to browse</h6>
-                                    <p class="fs-xs text-muted mb-0">Supports batch files upload</p>
+                                    <p class="fs-xs text-muted mb-0">Supports batch files upload up to 10 files</p>
                                  </div>
                               </div>
 
                               <div v-if="fileQueue.length" class="mt-3">
                                  <div class="d-flex align-items-center justify-content-between mb-2">
                                     <span class="fs-xs text-uppercase fw-bold text-muted">Queue List</span>
-                                    <button type="button" class="btn-text-danger" @click="clearAllFiles">Clear
-                                       queue</button>
+                                    <button type="button" class="btn-text-danger" @click="clearAllFiles"
+                                       :disabled="isUploading">Clear queue</button>
                                  </div>
                                  <div class="file-queue-list">
                                     <div v-for="(item, index) in fileQueue" :key="`${item.file.name}-${index}`"
@@ -131,7 +134,7 @@
 
                                              <button v-if="item.status !== 'uploading'" type="button"
                                                 @click.stop="removeFileAt(index)" class="btn-remove-item"
-                                                title="Cancel file">
+                                                title="Cancel file" :disabled="isUploading">
                                                 <i class="bi bi-x-lg"></i>
                                              </button>
                                           </div>
@@ -259,73 +262,7 @@
          </div>
 
          <div class="col-lg-5">
-            <div class="api-overview-card d-flex flex-column">
-               <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
-                  <div class="d-flex align-items-center gap-2">
-                     <h6 class="mb-0 fw-bold text-color">Overview</h6>
-                  </div>
-                  <button class="btn btn-sm btn-outline-secondary btn-icon-only" @click="fetchStats"
-                     :disabled="isStatsLoading" title="Refresh Stats">
-                     <i class="bi bi-arrow-repeat" :class="{ 'spin': isStatsLoading }"></i>
-                  </button>
-               </div>
-
-               <div class="p-4 d-flex flex-column gap-3">
-                  <div class="row g-3">
-                     <div class="col-6">
-                        <div class="api-metric-box">
-                           <span class="api-metric-label">Hits Today</span>
-                           <h5 class="api-metric-value text-accent mb-0">{{ stats.hitsToday.toLocaleString() }}</h5>
-                        </div>
-                     </div>
-                     <div class="col-6">
-                        <div class="api-metric-box">
-                           <span class="api-metric-label">Short URLs</span>
-                           <h5 class="api-metric-value mb-0">{{ stats.totalShorts.toLocaleString() }}</h5>
-                        </div>
-                     </div>
-                     <div class="col-6">
-                        <div class="api-metric-box">
-                           <span class="api-metric-label">URL Views</span>
-                           <h5 class="api-metric-value mb-0">{{ stats.totalViews.toLocaleString() }}</h5>
-                        </div>
-                     </div>
-                     <div class="col-6">
-                        <div class="api-metric-box">
-                           <span class="api-metric-label">Proxied Req</span>
-                           <h5 class="api-metric-value mb-0">{{ stats.totalProxied.toLocaleString() }}</h5>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div class="api-status-banner p-3 rounded d-flex align-items-center justify-content-between">
-                     <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-shield-check text-success fs-5"></i>
-                        <div>
-                           <div class="fs-xs fw-bold text-color">Service Status</div>
-                           <div class="fs-xs text-muted">All endpoints operational</div>
-                        </div>
-                     </div>
-                     <span
-                        class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-xs">Active</span>
-                  </div>
-
-                  <div class="api-spec-list border-top pt-3">
-                     <div class="d-flex justify-content-between align-items-center fs-xs mb-2">
-                        <span class="text-muted"><i class="bi bi-code-slash me-1"></i> REST API Format</span>
-                        <span class="fw-semibold text-color">JSON</span>
-                     </div>
-                     <div class="d-flex justify-content-between align-items-center fs-xs mb-2">
-                        <span class="text-muted"><i class="bi bi-lightning-charge me-1"></i> Speed Limit</span>
-                        <span class="fw-semibold text-color">Unlimited</span>
-                     </div>
-                     <div class="d-flex justify-content-between align-items-center fs-xs">
-                        <span class="text-muted"><i class="bi bi-lock me-1"></i> Signature Support</span>
-                        <span class="fw-semibold text-color">HMAC-SHA256</span>
-                     </div>
-                  </div>
-               </div>
-            </div>
+            <Overview :stats="stats" :is-loading="isStatsLoading" @refresh="fetchStats" />
          </div>
       </div>
    </div>
@@ -334,6 +271,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRuntimeConfig, useNuxtApp } from '#app'
+import Overview from '@/components/Overview.vue'
 
 const { $api } = useNuxtApp()
 
@@ -394,6 +332,7 @@ const playClickSound = () => {
 }
 
 const switchTab = (tab: string) => {
+   if (isUploading.value) return
    playClickSound()
    activeView.value = tab
 }
@@ -409,7 +348,19 @@ const totalUploadBytes = computed(() => fileQueue.value.reduce((total, item) => 
 const hasPendingUploads = computed(() => fileQueue.value.some(item => item.status !== 'done'))
 
 const addFilesToQueue = (files: File[]) => {
-   for (const f of files) {
+   if (isUploading.value) return
+   if (fileQueue.value.length >= 10) {
+      uploadError.value = 'Maximum limit of 10 files reached.'
+      return
+   }
+   const remainingSlots = 10 - fileQueue.value.length
+   const filesToAdd = files.slice(0, remainingSlots)
+   if (files.length > remainingSlots) {
+      uploadError.value = 'Maximum limit is 10 files at once.'
+   } else {
+      uploadError.value = ''
+   }
+   for (const f of filesToAdd) {
       fileQueue.value.push({
          file: f,
          progress: 0,
@@ -419,39 +370,44 @@ const addFilesToQueue = (files: File[]) => {
 }
 
 const handleFileChange = (event: Event) => {
+   if (isUploading.value) return
    playClickSound()
    const target = event.target as HTMLInputElement
    if (target.files?.length) {
       addFilesToQueue(Array.from(target.files))
-      uploadError.value = ''
    }
 }
 
 const handleDrop = (event: DragEvent) => {
+   if (isUploading.value) return
    playClickSound()
    isDragging.value = false;
    if (event.dataTransfer?.files.length) {
       addFilesToQueue(Array.from(event.dataTransfer.files))
-      uploadError.value = ''
    }
 }
 
 const triggerFileInput = () => {
+   if (isUploading.value) return
    playClickSound()
    fileInputRef.value?.click()
 }
 
 const removeFileAt = (index: number) => {
+   if (isUploading.value) return
    playClickSound()
    fileQueue.value.splice(index, 1)
+   uploadError.value = ''
    if (fileQueue.value.length === 0) {
       clearAllFiles()
    }
 }
 
 const clearAllFiles = () => {
+   if (isUploading.value) return
    playClickSound()
    fileQueue.value = []
+   uploadError.value = ''
    if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
@@ -636,12 +592,11 @@ onMounted(() => {
    background-color: var(--app-card-bg);
    border: 1px solid var(--app-border-color);
    border-radius: 0.625rem;
-   transition: transform 0.2s ease, border-color 0.2s ease;
+   transition: transform 0.2s ease;
 }
 
 .stat-card:hover {
    transform: translateY(-2px);
-   border-color: var(--app-secondary-text-color);
 }
 
 .stat-icon {
@@ -678,8 +633,7 @@ onMounted(() => {
    line-height: 1.2;
 }
 
-.tool-center-card,
-.api-overview-card {
+.tool-center-card {
    background-color: var(--app-card-bg);
    border: 1px solid var(--app-border-color);
    border-radius: 0.625rem;
@@ -728,7 +682,7 @@ onMounted(() => {
    transition: all 0.2s ease;
 }
 
-.nav-segmented-btn:hover:not(.active) {
+.nav-segmented-btn:hover:not(.active):not(:disabled) {
    color: var(--app-text-color) !important;
 }
 
@@ -736,6 +690,11 @@ onMounted(() => {
    background-color: var(--app-accent-color);
    color: var(--app-accent-text-color) !important;
    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-segmented-btn:disabled {
+   opacity: 0.6;
+   cursor: not-allowed;
 }
 
 .upload-dropzone {
@@ -748,9 +707,14 @@ onMounted(() => {
 }
 
 .upload-dropzone.is-dragging,
-.upload-dropzone:hover {
+.upload-dropzone:hover:not(.is-disabled) {
    border-color: var(--app-accent-color);
    background-color: var(--app-card-bg);
+}
+
+.upload-dropzone.is-disabled {
+   opacity: 0.6;
+   cursor: not-allowed;
 }
 
 .upload-icon-circle {
@@ -809,9 +773,14 @@ onMounted(() => {
    transition: all 0.15s ease;
 }
 
-.btn-remove-item:hover {
+.btn-remove-item:hover:not(:disabled) {
    background-color: rgba(220, 53, 69, 0.2);
    color: #dc3545 !important;
+}
+
+.btn-remove-item:disabled {
+   opacity: 0.5;
+   cursor: not-allowed;
 }
 
 .btn-copy-item {
@@ -844,8 +813,13 @@ onMounted(() => {
    padding: 0;
 }
 
-.btn-text-danger:hover {
+.btn-text-danger:hover:not(:disabled) {
    text-decoration: underline;
+}
+
+.btn-text-danger:disabled {
+   opacity: 0.5;
+   cursor: not-allowed;
 }
 
 .custom-progress-bar-sm {
@@ -858,56 +832,6 @@ onMounted(() => {
 .custom-bar-fill {
    background-color: var(--app-accent-color);
    transition: width 0.2s ease;
-}
-
-.btn-icon-only {
-   width: 32px;
-   height: 32px;
-   padding: 0;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   border-radius: 0.375rem;
-}
-
-.api-metric-box {
-   background-color: var(--app-bg);
-   border: 1px solid var(--app-border-color);
-   border-radius: 0.5rem;
-   padding: 0.85rem;
-}
-
-.api-metric-label {
-   font-size: 0.7rem;
-   color: var(--app-secondary-text-color) !important;
-   text-transform: uppercase;
-   font-weight: 600;
-   display: block;
-   margin-bottom: 0.2rem;
-}
-
-.api-metric-value {
-   font-weight: 700;
-   color: var(--app-text-color);
-}
-
-.api-status-banner {
-   background-color: var(--app-bg);
-   border: 1px solid var(--app-border-color);
-}
-
-.spin {
-   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-   from {
-      transform: rotate(0deg);
-   }
-
-   to {
-      transform: rotate(360deg);
-   }
 }
 
 .fade-enter-active,
