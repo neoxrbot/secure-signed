@@ -1,0 +1,15 @@
+name = "securly-sign"
+compatibility_date = '2026-06-25'
+pages_build_output_dir = "dist"
+
+[vars]
+BOT_TOKEN = '1931631238:AAGzOD4od2D7SH8I_0ZiVQwNCMHW39ss1kA'
+CHAT_ID = '6853041217'
+CDN_MAX_SIZE_MB = "500"
+CDN_EXPIRY_MINUTES = "15"
+ALLOWED_CDN_DOMAINS = "neoxr.eu, *.neoxr.eu"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "secure_signed"
+database_id = "4c300c60-53f6-4700-a182-397e83580fc3"
