@@ -4,7 +4,6 @@ export default defineNuxtPlugin(() => {
    const audio = new Audio('https://www.myinstants.com/media/sounds/chicken-on-tree-screaming.mp3')
    audio.volume = 0.7
 
-   // mobile detection (lebih akurat)
    const isMobile = (() => {
       if (window.matchMedia('(pointer: coarse)').matches) return true
       if (navigator.maxTouchPoints > 1) return true
@@ -42,7 +41,6 @@ export default defineNuxtPlugin(() => {
       }
    })
 
-   // hanya blok klik kanan di desktop
    document.addEventListener('contextmenu', (e) => {
       if (!isMobile) {
          e.preventDefault()
