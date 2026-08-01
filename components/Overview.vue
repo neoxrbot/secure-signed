@@ -14,26 +14,30 @@
          <div class="row g-3">
             <div class="col-6">
                <div class="api-metric-box">
-                  <span class="api-metric-label">Hits Today</span>
-                  <h5 class="api-metric-value text-accent mb-0">{{ (stats.hitsToday || 0).toLocaleString() }}</h5>
+                  <h5 class="api-metric-value text-accent mb-1">{{ (stats.hitsToday || 0).toLocaleString() }}</h5>
+                  <span class="api-metric-label mb-0">Hits Today</span>
+                  <i class="bi bi-activity bg-watermark-icon"></i>
                </div>
             </div>
             <div class="col-6">
                <div class="api-metric-box">
-                  <span class="api-metric-label">Short URLs</span>
-                  <h5 class="api-metric-value mb-0">{{ (stats.totalShorts || 0).toLocaleString() }}</h5>
+                  <h5 class="api-metric-value mb-1">{{ (stats.totalShorts || 0).toLocaleString() }}</h5>
+                  <span class="api-metric-label mb-0">Short URLs</span>
+                  <i class="bi bi-link-45deg bg-watermark-icon"></i>
                </div>
             </div>
             <div class="col-6">
                <div class="api-metric-box">
-                  <span class="api-metric-label">URL Views</span>
-                  <h5 class="api-metric-value mb-0">{{ (stats.totalViews || 0).toLocaleString() }}</h5>
+                  <h5 class="api-metric-value mb-1">{{ (stats.totalViews || 0).toLocaleString() }}</h5>
+                  <span class="api-metric-label mb-0">URL Views</span>
+                  <i class="bi bi-eye-fill bg-watermark-icon"></i>
                </div>
             </div>
             <div class="col-6">
                <div class="api-metric-box">
-                  <span class="api-metric-label">Proxied Req</span>
-                  <h5 class="api-metric-value mb-0">{{ (stats.totalProxied || 0).toLocaleString() }}</h5>
+                  <h5 class="api-metric-value mb-1">{{ (stats.totalProxied || 0).toLocaleString() }}</h5>
+                  <span class="api-metric-label mb-0">Proxied Req</span>
+                  <i class="bi bi-globe bg-watermark-icon"></i>
                </div>
             </div>
          </div>
@@ -117,10 +121,13 @@ const emit = defineEmits(['refresh'])
 }
 
 .api-metric-box {
+   position: relative;
+   overflow: hidden;
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
-   border-radius: 0.5rem;
-   padding: 0.85rem;
+   border-radius: 0.625rem;
+   padding: 0.9rem 1rem;
+   z-index: 1;
 }
 
 .api-metric-label {
@@ -129,12 +136,28 @@ const emit = defineEmits(['refresh'])
    text-transform: uppercase;
    font-weight: 600;
    display: block;
-   margin-bottom: 0.2rem;
+   position: relative;
+   z-index: 2;
 }
 
 .api-metric-value {
    font-weight: 700;
+   font-size: 1.2rem;
    color: var(--app-text-color);
+   position: relative;
+   z-index: 2;
+}
+
+.bg-watermark-icon {
+   position: absolute;
+   right: -10px;
+   bottom: -12px;
+   font-size: 3.5rem;
+   opacity: 0.08;
+   color: var(--app-text-color);
+   pointer-events: none;
+   z-index: 1;
+   line-height: 1;
 }
 
 .api-status-banner {
