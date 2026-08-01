@@ -8,7 +8,7 @@
                   <ul class="list-unstyled docs-nav">
                      <li v-for="endpoint in allEndpoints" :key="endpoint.id">
                         <a :href="`#${endpoint.id}`" class="nav-link"
-                           :class="{ 'active': activeSection === endpoint.id }">
+                           :class="{ 'active': activeSection === endpoint.id }" @click="playClickSound">
                            {{ endpoint.title }}
                         </a>
                      </li>
@@ -85,7 +85,27 @@ const copyStatus = ref({})
 const activeSection = ref('')
 let observer = null
 
+const playClickSound = () => {
+   try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext
+      if (!AudioContext) return
+      const ctx = new AudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(600, ctx.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.035)
+      gain.gain.setValueAtTime(0.06, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start()
+      osc.stop(ctx.currentTime + 0.035)
+   } catch { }
+}
+
 const copyToClipboard = (text, id) => {
+   playClickSound()
    navigator.clipboard.writeText(text).then(() => {
       copyStatus.value[id] = 'Copied!'; setTimeout(() => { delete copyStatus.value[id] }, 2000)
    })
@@ -222,7 +242,6 @@ html {
    font-weight: 500;
    font-size: 0.9rem;
    transition: all .2s;
-   /* border-left: 2px solid transparent; */
 }
 
 .docs-nav .nav-link:hover {
