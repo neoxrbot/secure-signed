@@ -36,11 +36,11 @@
 
       <div class="p-3 flex-grow-1 overflow-hidden">
          <div class="notes-list-wrapper custom-scroll d-flex flex-column gap-2">
-            <div v-for="note in displayNotes" :key="note.id" class="note-card-row p-2.5"
+            <div v-for="note in displayNotes" :key="note.id" class="note-card-row"
                :class="{ 'is-editing': activeEditId === note.id }">
                <div class="d-flex align-items-start justify-content-between gap-2 min-w-0">
                   <div class="min-w-0 flex-grow-1">
-                     <div class="d-flex align-items-center gap-2 mb-1 min-w-0">
+                     <div class="d-flex align-items-center gap-2 mb-1.5 min-w-0">
                         <span v-if="note.is_private" class="pill-badge private">
                            <i class="bi bi-lock-fill"></i> Private
                         </span>
@@ -251,6 +251,7 @@ const formatDate = (v: number | string) => {
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
    border-radius: 0.5rem;
+   padding: 0.75rem 0.85rem;
    transition: all 0.2s ease;
 }
 
@@ -270,7 +271,7 @@ const formatDate = (v: number | string) => {
    gap: 0.25rem;
    font-size: 0.625rem;
    font-weight: 600;
-   padding: 0.15rem 0.4rem;
+   padding: 0.2rem 0.45rem;
    border-radius: 0.25rem;
    flex-shrink: 0;
 }
@@ -289,8 +290,8 @@ const formatDate = (v: number | string) => {
 
 .note-row-title {
    color: var(--app-text-color);
-   font-size: 0.825rem;
-   line-height: 1.25;
+   font-size: 0.85rem;
+   line-height: 1.3;
    white-space: nowrap;
    overflow: hidden;
    text-overflow: ellipsis;
