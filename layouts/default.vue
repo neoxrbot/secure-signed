@@ -128,7 +128,7 @@ const navLinks = computed(() => {
    ]
 
    if (isAdmin.value) {
-      links.push({ text: 'Workspace', href: '/admin', icon: 'bi bi-person-badge-fill' })
+      links.push({ text: 'Workspace', href: '/workspace', icon: 'bi bi-person-badge-fill' })
       links.push({ text: 'Logout', href: '#', icon: 'bi bi-box-arrow-right', action: 'logout' })
    } else {
       links.push({ text: 'Login', href: '/admin', icon: 'bi bi-shield-lock-fill' })
