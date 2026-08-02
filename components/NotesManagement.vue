@@ -34,8 +34,8 @@
          </div>
       </div>
 
-      <div class="p-3 flex-grow-1 overflow-hidden">
-         <div class="notes-list-wrapper custom-scroll d-flex flex-column gap-2">
+      <div class="p-3 flex-grow-1">
+         <div class="notes-list-wrapper d-flex flex-column gap-2">
             <div v-for="note in displayNotes" :key="note.id" class="note-card-row"
                :class="{ 'is-editing': activeEditId === note.id }">
                <div class="d-flex align-items-center justify-content-between gap-2 min-w-0">
@@ -242,8 +242,8 @@ const formatDate = (v: number | string) => {
 }
 
 .notes-list-wrapper {
-   max-height: 480px;
-   overflow-y: auto;
+   max-height: none;
+   overflow: visible;
 }
 
 .note-card-row {
