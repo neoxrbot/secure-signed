@@ -113,8 +113,9 @@
             </div>
 
             <div class="col-lg-5">
-               <NotesManagement :notes="notes" :total-notes="totalNotes" :loading="loading" :active-edit-id="form.id"
-                  @edit="editNote" @delete="removeNote" @load-more="loadMoreNotes" @refresh="refreshNotes" />
+               <NotesManagement :notes="notes" :page="page" :per-page="perPage" :total-notes="totalNotes"
+                  :loading="loading" :active-edit-id="form.id" @edit="editNote" @delete="removeNote"
+                  @page-change="goToPage" @per-page-change="handlePerPageChange" @refresh="fetchNotes" />
             </div>
          </div>
          <Alert type="danger mt-3" :show="!!error">{{ error }}</Alert>
@@ -125,6 +126,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, nextTick } from 'vue'
 import { useNuxtApp } from '#app'
+import NotesManagement from '@/components/NotesManagement.vue'
 
 const { $api } = useNuxtApp()
 const isAdmin = ref(false)
@@ -147,7 +149,7 @@ const check = async () => {
    const r = await $api('/api/admin/me')
    isAdmin.value = !!r.data.admin
    if (isAdmin.value) {
-      refreshNotes()
+      fetchNotes()
    } else {
       nextTick(() => pinInputs.value[0]?.focus())
    }
@@ -213,27 +215,27 @@ const logout = async () => {
    nextTick(() => pinInputs.value[0]?.focus())
 }
 
-const fetchNotes = async (append = false) => {
+const fetchNotes = async () => {
    loading.value = true
    try {
       const r = await $api(`/api/notes?page=${page.value}&per_page=${perPage.value}`)
-      const fetched = r.data || []
-      notes.value = append ? [...notes.value, ...fetched] : fetched
+      notes.value = r.data || []
       totalNotes.value = r.meta?.total || notes.value.length
+      page.value = r.meta?.page || page.value
    } finally {
       loading.value = false
    }
 }
 
-const loadMoreNotes = async () => {
-   if (loading.value || notes.value.length >= totalNotes.value) return
-   page.value++
-   await fetchNotes(true)
+const goToPage = async (target: number) => {
+   page.value = Math.max(1, target)
+   await fetchNotes()
 }
 
-const refreshNotes = async () => {
+const handlePerPageChange = async (newPerPage: number) => {
+   perPage.value = newPerPage
    page.value = 1
-   await fetchNotes(false)
+   await fetchNotes()
 }
 
 const saveNote = async () => {
@@ -244,7 +246,7 @@ const saveNote = async () => {
          body: form.value
       })
       resetForm()
-      refreshNotes()
+      goToPage(1)
    } finally {
       loading.value = false
    }
@@ -257,7 +259,8 @@ const editNote = (n: any) => {
 const removeNote = async (id: string) => {
    if (!confirm('Delete this note?')) return
    await $api(`/api/notes/${id}`, { method: 'DELETE' })
-   refreshNotes()
+   if (notes.value.length === 1 && page.value > 1) page.value--
+   fetchNotes()
 }
 
 const resetForm = () => {

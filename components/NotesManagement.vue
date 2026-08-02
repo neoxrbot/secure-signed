@@ -1,29 +1,39 @@
 <template>
    <div class="notes-management-card d-flex flex-column h-100">
-      <div class="p-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+      <div class="p-2 px-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
          <div class="d-flex align-items-center gap-2">
             <div class="notes-badge"><i class="bi bi-journal-text"></i></div>
             <div>
                <h6 class="notes-title mb-0">Library</h6>
-               <span class="notes-subtitle">{{ notes.length }} of {{ totalNotes }} note(s)</span>
+               <span class="notes-subtitle">{{ totalNotes }} note(s) total</span>
             </div>
          </div>
-         <button class="btn btn-sm btn-outline-secondary btn-icon-only" @click="emit('refresh')" :disabled="loading"
-            title="Refresh list">
-            <i class="bi bi-arrow-repeat" :class="{ 'spin': loading }"></i>
-         </button>
+         <div class="d-flex align-items-center gap-2">
+            <select :value="perPage" class="form-select form-select-sm per-page-select"
+               @change="emit('per-page-change', Number(($event.target as HTMLSelectElement).value))">
+               <option :value="5">5 / page</option>
+               <option :value="10">10 / page</option>
+               <option :value="20">20 / page</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary btn-icon-only" @click="emit('refresh')" :disabled="loading"
+               title="Refresh list">
+               <i class="bi bi-arrow-repeat" :class="{ 'spin': loading }"></i>
+            </button>
+         </div>
       </div>
 
-      <div class="notes-scroll-area p-2 flex-grow-1 custom-scroll" ref="scrollContainerRef">
+      <div class="p-2 flex-grow-1 overflow-hidden">
          <div class="notes-list d-flex flex-column gap-1">
             <div v-for="note in notes" :key="note.id" class="note-compact-item p-2"
                :class="{ 'editing': activeEditId === note.id }">
-               <div class="d-flex align-items-center justify-content-between gap-2">
+               <div class="d-flex align-items-center justify-content-between gap-2 min-w-0">
                   <div class="min-w-0 flex-grow-1">
-                     <div class="d-flex align-items-center gap-1">
-                        <i v-if="note.is_private" class="bi bi-lock-fill text-danger fs-xs" title="Private"></i>
+                     <div class="d-flex align-items-center gap-1 min-w-0">
+                        <i v-if="note.is_private" class="bi bi-lock-fill text-danger fs-xs flex-shrink-0"
+                           title="Private"></i>
                         <NuxtLink :to="`/note/${note.id}`"
-                           class="note-title text-truncate d-block fw-semibold text-decoration-none">
+                           class="note-title text-truncate d-block fw-semibold text-decoration-none"
+                           :title="note.title">
                            {{ note.title }}
                         </NuxtLink>
                      </div>
@@ -49,55 +59,43 @@
                <i class="bi bi-journal-x fs-5 d-block mb-1"></i>
                No notes found.
             </div>
-
-            <div ref="sentinelRef" class="lazy-load-sentinel py-2 text-center">
-               <span v-if="loading" class="spinner-border spinner-border-sm text-accent"></span>
-               <span v-else-if="hasMore" class="fs-xs text-muted">Scroll to load more</span>
-               <span v-else-if="notes.length" class="fs-xs text-muted opacity-50">End of library</span>
-            </div>
          </div>
+      </div>
+
+      <div class="p-2 px-3 border-top d-flex align-items-center justify-content-between">
+         <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+            :disabled="page <= 1 || loading" @click="emit('page-change', page - 1)">
+            <i class="bi bi-chevron-left"></i> Prev
+         </button>
+         <span class="fs-xs text-muted fw-semibold">Page {{ page }} / {{ totalPages }}</span>
+         <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+            :disabled="page >= totalPages || loading" @click="emit('page-change', page + 1)">
+            Next <i class="bi bi-chevron-right"></i>
+         </button>
       </div>
    </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps<{
    notes: any[]
+   page: number
+   perPage: number
    totalNotes: number
    loading?: boolean
    activeEditId?: string
 }>()
 
-const emit = defineEmits(['edit', 'delete', 'load-more', 'refresh'])
+const emit = defineEmits(['edit', 'delete', 'page-change', 'per-page-change', 'refresh'])
 
-const sentinelRef = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
-
-const hasMore = computed(() => props.notes.length < props.totalNotes)
+const totalPages = computed(() => Math.max(Math.ceil(props.totalNotes / props.perPage), 1))
 
 const formatDate = (v: number | string) => {
    if (!v) return '-'
    return new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
-
-onMounted(() => {
-   observer = new IntersectionObserver((entries) => {
-      const entry = entries[0]
-      if (entry && entry.isIntersecting && hasMore.value && !props.loading) {
-         emit('load-more')
-      }
-   }, { rootMargin: '60px' })
-
-   if (sentinelRef.value) {
-      observer.observe(sentinelRef.value)
-   }
-})
-
-onBeforeUnmount(() => {
-   if (observer) observer.disconnect()
-})
 </script>
 
 <style scoped>
@@ -107,6 +105,10 @@ onBeforeUnmount(() => {
 
 .fs-sm {
    font-size: 0.825rem;
+}
+
+.min-w-0 {
+   min-width: 0;
 }
 
 .text-color {
@@ -121,7 +123,8 @@ onBeforeUnmount(() => {
    color: var(--app-secondary-text-color) !important;
 }
 
-.border-bottom {
+.border-bottom,
+.border-top {
    border-color: var(--app-border-color) !important;
 }
 
@@ -156,6 +159,15 @@ onBeforeUnmount(() => {
    color: var(--app-secondary-text-color) !important;
 }
 
+.per-page-select {
+   width: auto;
+   background-color: var(--app-bg) !important;
+   color: var(--app-text-color) !important;
+   border-color: var(--app-border-color) !important;
+   font-size: 0.75rem;
+   padding: 0.2rem 1.5rem 0.2rem 0.5rem;
+}
+
 .btn-icon-only {
    width: 28px;
    height: 28px;
@@ -164,11 +176,6 @@ onBeforeUnmount(() => {
    align-items: center;
    justify-content: center;
    border-radius: 0.375rem;
-}
-
-.notes-scroll-area {
-   max-height: 520px;
-   overflow-y: auto;
 }
 
 .note-compact-item {
@@ -186,6 +193,10 @@ onBeforeUnmount(() => {
    color: var(--app-text-color);
    font-size: 0.825rem;
    line-height: 1.2;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   max-width: 100%;
 }
 
 .note-title:hover {
