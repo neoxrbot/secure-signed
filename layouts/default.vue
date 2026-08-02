@@ -12,8 +12,8 @@
                <div class="d-none d-md-flex align-items-center">
                   <ul class="navbar-nav flex-row gap-2">
                      <li v-for="link in navLinks" :key="link.text" class="nav-item">
-                        <button v-if="link.action === 'logout'" class="nav-link custom-link border-0 bg-transparent"
-                           @click="handleLogout">
+                        <button v-if="link.action === 'logout'"
+                           class="nav-link custom-link logout-link border-0 bg-transparent" @click="handleLogout">
                            {{ link.text }}
                         </button>
                         <a v-else-if="isExternalLink(link.href)" class="nav-link custom-link" :href="link.href"
@@ -53,7 +53,7 @@
             <ul class="nav flex-column gap-2 mt-4">
                <li v-for="link in navLinks" :key="link.text" class="nav-item">
                   <button v-if="link.action === 'logout'"
-                     class="nav-link sidebar-pill border-0 bg-transparent w-100 text-start"
+                     class="nav-link sidebar-pill logout-sidebar-pill border-0 bg-transparent w-100 text-start"
                      @click="handleLogout(); closeSidebar()">
                      <div class="d-flex align-items-center">
                         <span class="icon-box"><i :class="link.icon"></i></span>
@@ -109,6 +109,13 @@ import { useRuntimeConfig, useRoute, useRouter, useNuxtApp, useState } from '#ap
 import { usePageEffects } from '@/composables/usePageEffects'
 import { Offcanvas } from 'bootstrap'
 
+interface NavItem {
+   text: string
+   href: string
+   icon: string
+   action?: string
+}
+
 const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
@@ -121,8 +128,8 @@ const isSidebarOpen = ref(false)
 
 const isAdmin = useState<boolean>('admin-status', () => false)
 
-const navLinks = computed(() => {
-   const links = [
+const navLinks = computed<NavItem[]>(() => {
+   const links: NavItem[] = [
       { text: 'Home', href: '/', icon: 'bi bi-house' },
       { text: 'Documentation', href: '/docs', icon: 'bi bi-book' }
    ]
@@ -149,11 +156,9 @@ const checkAdminStatus = async () => {
 const handleLogout = async () => {
    try {
       await $api('/api/admin/logout', { method: 'POST' })
-      isAdmin.value = false
-      if (route.path === '/admin') {
-         router.push('/')
-      }
    } catch { }
+   isAdmin.value = false
+   router.push('/login')
 }
 
 const isExternalLink = (href: string) => href.startsWith('http')
@@ -245,6 +250,14 @@ body.light-mode .scrolled-nav {
    font-weight: 600;
 }
 
+.nav-link.custom-link.logout-link {
+   color: #dc3545 !important;
+}
+
+.nav-link.custom-link.logout-link:hover {
+   color: #e35d6a !important;
+}
+
 .full-sidebar {
    background-color: var(--app-card-bg);
    border-right: 1px solid var(--app-border-color);
@@ -309,6 +322,19 @@ body.light-mode .scrolled-nav {
 
 .sidebar-pill.active .icon-box i {
    color: var(--app-accent-text-color) !important;
+}
+
+.sidebar-pill.logout-sidebar-pill {
+   color: #dc3545 !important;
+}
+
+.sidebar-pill.logout-sidebar-pill .icon-box i {
+   color: #dc3545 !important;
+}
+
+.sidebar-pill.logout-sidebar-pill:hover {
+   background-color: rgba(220, 53, 69, 0.1) !important;
+   color: #dc3545 !important;
 }
 
 .shop-card {
