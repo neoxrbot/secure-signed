@@ -38,28 +38,11 @@
          <div class="notes-list-wrapper custom-scroll d-flex flex-column gap-2">
             <div v-for="note in displayNotes" :key="note.id" class="note-card-row"
                :class="{ 'is-editing': activeEditId === note.id }">
-               <div class="d-flex align-items-start justify-content-between gap-2 min-w-0">
-                  <div class="min-w-0 flex-grow-1">
-                     <div class="mb-1.5 min-w-0">
-                        <NuxtLink :to="`/note/${note.id}`"
-                           class="note-row-title text-truncate d-block fw-semibold text-decoration-none"
-                           :title="note.title">
-                           {{ note.title }}
-                        </NuxtLink>
-                     </div>
-                     <div class="d-flex align-items-center gap-2 fs-xs text-muted flex-wrap">
-                        <span v-if="note.is_private" class="pill-badge private">
-                           <i class="bi bi-lock-fill"></i> Private
-                        </span>
-                        <span v-else class="pill-badge public">
-                           <i class="bi bi-globe"></i> Public
-                        </span>
-                        <span class="detail-divider"></span>
-                        <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
-                        <span class="detail-divider"></span>
-                        <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
-                     </div>
-                  </div>
+               <div class="d-flex align-items-center justify-content-between gap-2 min-w-0">
+                  <NuxtLink :to="`/note/${note.id}`"
+                     class="note-row-title text-truncate fw-semibold text-decoration-none" :title="note.title">
+                     {{ note.title }}
+                  </NuxtLink>
 
                   <div class="action-buttons-group d-flex align-items-center gap-1 flex-shrink-0">
                      <button class="btn-action-pill edit-btn" title="Edit note" @click="emit('edit', note)">
@@ -69,6 +52,21 @@
                         <i class="bi bi-trash3-fill"></i>
                      </button>
                   </div>
+               </div>
+
+               <div class="note-item-divider my-2"></div>
+
+               <div class="d-flex align-items-center justify-content-between gap-2 fs-xs text-muted flex-wrap">
+                  <div class="d-flex align-items-center gap-2">
+                     <span v-if="note.is_private" class="pill-badge private">
+                        <i class="bi bi-lock-fill"></i> Private
+                     </span>
+                     <span v-else class="pill-badge public">
+                        <i class="bi bi-globe"></i> Public
+                     </span>
+                     <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
+                  </div>
+                  <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
                </div>
             </div>
 
@@ -265,12 +263,10 @@ const formatDate = (v: number | string) => {
    background-color: var(--app-card-bg);
 }
 
-.detail-divider {
-   width: 1px;
-   height: 10px;
+.note-item-divider {
+   height: 1px;
    background-color: var(--app-border-color);
-   display: inline-block;
-   flex-shrink: 0;
+   width: 100%;
 }
 
 .pill-badge {
