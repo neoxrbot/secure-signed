@@ -30,6 +30,15 @@
                <button v-if="form.id" type="button" class="btn btn-outline-secondary ms-2" @click="resetForm">Cancel</button>
             </form>
 
+            <div class="d-flex justify-content-between align-items-center mb-2">
+               <span class="fs-xs text-muted">Showing {{ pagination.from }}-{{ pagination.to }} of {{ pagination.total }} notes</span>
+               <select v-model.number="perPage" class="form-select form-select-sm per-page-select" @change="goToPage(1)">
+                  <option :value="5">5 / page</option>
+                  <option :value="10">10 / page</option>
+                  <option :value="20">20 / page</option>
+               </select>
+            </div>
+
             <div class="list-group note-list">
                <div v-for="note in notes" :key="note.id" class="list-group-item">
                   <div class="d-flex justify-content-between gap-2">
@@ -37,6 +46,13 @@
                      <div class="d-flex gap-2"><button class="btn btn-sm btn-outline-secondary" @click="editNote(note)">Edit</button><button class="btn btn-sm btn-outline-danger" @click="removeNote(note.id)">Delete</button></div>
                   </div>
                </div>
+               <div v-if="!notes.length" class="list-group-item text-muted fs-sm">No notes yet.</div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3">
+               <button class="btn btn-sm btn-outline-secondary" :disabled="page <= 1 || loading" @click="goToPage(page - 1)">Previous</button>
+               <span class="fs-xs text-muted">Page {{ page }} / {{ totalPages }}</span>
+               <button class="btn btn-sm btn-outline-secondary" :disabled="page >= totalPages || loading" @click="goToPage(page + 1)">Next</button>
             </div>
          </div>
          <Alert type="danger mt-3" :show="!!error">{{ error }}</Alert>
@@ -44,20 +60,33 @@
    </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useNuxtApp } from '#app'
 const { $api } = useNuxtApp()
 const isAdmin = ref(false), loading = ref(false), error = ref(''), pin = ref('')
 const notes = ref<any[]>([])
+const page = ref(1), perPage = ref(10), totalNotes = ref(0)
 const editor = ref<HTMLTextAreaElement | null>(null), imageInput = ref<HTMLInputElement | null>(null)
 const form = ref<any>({ id: '', title: '', content: '', is_private: false })
 const check = async () => { const r = await $api('/api/admin/me'); isAdmin.value = !!r.data.admin; if (isAdmin.value) fetchNotes() }
 const login = async () => { loading.value = true; error.value=''; try { await $api('/api/admin/login', { method:'POST', body:{ pin: pin.value }}); await check() } catch(e:any){ error.value=e.data?.message||'Login failed' } finally { loading.value=false } }
 const logout = async () => { await $api('/api/admin/logout', { method:'POST' }); isAdmin.value=false; notes.value=[] }
-const fetchNotes = async () => { const r = await $api('/api/notes'); notes.value = r.data || [] }
-const saveNote = async () => { loading.value=true; try { await $api(form.value.id ? `/api/notes/${form.value.id}` : '/api/notes', { method: form.value.id ? 'PUT':'POST', body: form.value }); resetForm(); fetchNotes() } finally { loading.value=false } }
+const totalPages = computed(() => Math.max(Math.ceil(totalNotes.value / perPage.value), 1))
+const pagination = computed(() => ({
+   total: totalNotes.value,
+   from: totalNotes.value ? ((page.value - 1) * perPage.value) + 1 : 0,
+   to: Math.min(page.value * perPage.value, totalNotes.value)
+}))
+const fetchNotes = async () => {
+   const r = await $api(`/api/notes?page=${page.value}&per_page=${perPage.value}`)
+   notes.value = r.data || []
+   totalNotes.value = r.meta?.total || notes.value.length
+   page.value = r.meta?.page || page.value
+}
+const goToPage = async (target:number) => { page.value = Math.min(Math.max(target, 1), totalPages.value); await fetchNotes() }
+const saveNote = async () => { loading.value=true; try { await $api(form.value.id ? `/api/notes/${form.value.id}` : '/api/notes', { method: form.value.id ? 'PUT':'POST', body: form.value }); resetForm(); goToPage(1) } finally { loading.value=false } }
 const editNote = (n:any) => { form.value = { id:n.id, title:n.title, content:n.content, is_private:!!n.is_private } }
-const removeNote = async (id:string) => { if (!confirm('Delete this note?')) return; await $api(`/api/notes/${id}`, { method:'DELETE' }); fetchNotes() }
+const removeNote = async (id:string) => { if (!confirm('Delete this note?')) return; await $api(`/api/notes/${id}`, { method:'DELETE' }); if (notes.value.length === 1 && page.value > 1) page.value--; fetchNotes() }
 const resetForm = () => { form.value = { id:'', title:'', content:'', is_private:false } }
 const insert = (text:string) => { form.value.content += text }
 const wrap = (a:string,b:string) => { const el=editor.value; if(!el) return insert(a+b); const s=el.selectionStart,e=el.selectionEnd; form.value.content=form.value.content.slice(0,s)+a+form.value.content.slice(s,e)+b+form.value.content.slice(e) }
@@ -65,4 +94,4 @@ const uploadPhoto = async (ev:Event) => { const file=(ev.target as HTMLInputElem
 const formatDate = (v:number) => new Date(v).toLocaleString()
 onMounted(check)
 </script>
-<style scoped>.fs-sm{font-size:.875rem}.fs-xs{font-size:.75rem}.text-muted{color:var(--app-secondary-text-color)!important}.note-editor{font-family:monospace}.note-list .list-group-item{background:var(--app-bg);color:var(--app-text-color);border-color:var(--app-border-color)}a{color:var(--app-text-color)}</style>
+<style scoped>.fs-sm{font-size:.875rem}.fs-xs{font-size:.75rem}.text-muted{color:var(--app-secondary-text-color)!important}.note-editor{font-family:monospace}.note-list .list-group-item{background:var(--app-bg);color:var(--app-text-color);border-color:var(--app-border-color)}.per-page-select{width:auto}a{color:var(--app-text-color)}</style>

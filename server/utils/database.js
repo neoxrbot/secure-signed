@@ -113,12 +113,20 @@ export async function createNote(db, { id, title, content, isPrivate }) {
    return getNoteById(db, id)
 }
 
-export async function listNotes(db, { includePrivate = false, limit = 20 } = {}) {
+export async function listNotes(db, { includePrivate = false, limit = 20, offset = 0 } = {}) {
    const query = includePrivate
-      ? 'SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes ORDER BY created_at DESC LIMIT ?1'
-      : 'SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes WHERE is_private = 0 ORDER BY created_at DESC LIMIT ?1'
-   const { results } = await db.prepare(query).bind(limit).all()
+      ? 'SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes ORDER BY created_at DESC LIMIT ?1 OFFSET ?2'
+      : 'SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes WHERE is_private = 0 ORDER BY created_at DESC LIMIT ?1 OFFSET ?2'
+   const { results } = await db.prepare(query).bind(limit, offset).all()
    return results || []
+}
+
+export async function countNotes(db, { includePrivate = false } = {}) {
+   const query = includePrivate
+      ? 'SELECT COUNT(*) AS total FROM notes'
+      : 'SELECT COUNT(*) AS total FROM notes WHERE is_private = 0'
+   const row = await db.prepare(query).first()
+   return Number(row?.total || 0)
 }
 
 export async function getNoteById(db, id) {

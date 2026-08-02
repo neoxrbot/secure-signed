@@ -93,12 +93,12 @@ const notes = ref<any[]>([])
 const activeIndex = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 const activeNote = computed(() => notes.value[activeIndex.value] || null)
-const noteCells = computed(() => Array.from({ length: Math.min(notes.value.length || 1, 5) }, (_, i) => i))
+const noteCells = computed(() => Array.from({ length: Math.min(notes.value.length || 1, 4) }, (_, i) => i))
 const noteExcerpt = (content = '') => content.replace(/[#*_`>\-!\[\]()]/g, '').slice(0, 90)
 const fetchNotes = async () => {
    try {
       const response: any = await $fetch('/api/notes?public=1')
-      notes.value = (response.data || []).slice(0, 5)
+      notes.value = (response.data || []).slice(0, 4)
    } catch (error) {
       notes.value = []
    }
