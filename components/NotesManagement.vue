@@ -34,49 +34,71 @@
          </div>
       </div>
 
-      <div class="p-3 flex-grow-1">
+      <div class="p-3 flex-grow-1 overflow-hidden">
          <div class="notes-list-wrapper d-flex flex-column gap-2">
-            <div v-for="note in displayNotes" :key="note.id" class="note-card-row"
-               :class="{ 'is-editing': activeEditId === note.id }">
-               <div class="d-flex align-items-center justify-content-between gap-2 min-w-0">
-                  <NuxtLink :to="`/note/${note.id}`"
-                     class="note-row-title text-truncate fw-semibold text-decoration-none" :title="note.title">
-                     {{ note.title }}
-                  </NuxtLink>
+            <template v-if="loading">
+               <div v-for="i in Math.min(perPage, 5)" :key="`skeleton-${i}`" class="note-card-row">
+                  <div class="d-flex align-items-center justify-content-between gap-2 min-w-0">
+                     <div class="skeleton-title" :style="{ width: `${45 + (i * 13) % 35}%` }"></div>
+                     <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                        <div class="skeleton-btn"></div>
+                        <div class="skeleton-btn"></div>
+                     </div>
+                  </div>
+                  <div class="note-item-divider my-2"></div>
+                  <div class="d-flex align-items-center justify-content-between gap-2">
+                     <div class="d-flex align-items-center gap-2">
+                        <div class="skeleton-badge"></div>
+                        <div class="skeleton-meta" style="width: 50px;"></div>
+                     </div>
+                     <div class="skeleton-meta" style="width: 70px;"></div>
+                  </div>
+               </div>
+            </template>
 
-                  <div class="action-buttons-group d-flex align-items-center gap-1 flex-shrink-0">
-                     <button class="btn-action-pill edit-btn" title="Edit note" @click="emit('edit', note)">
-                        <i class="bi bi-pencil-square"></i>
-                     </button>
-                     <button class="btn-action-pill delete-btn" title="Delete note" @click="emit('delete', note.id)">
-                        <i class="bi bi-trash3-fill"></i>
-                     </button>
+            <template v-else>
+               <div v-for="note in displayNotes" :key="note.id" class="note-card-row"
+                  :class="{ 'is-editing': activeEditId === note.id }">
+                  <div class="d-flex align-items-center justify-content-between gap-2 min-w-0">
+                     <NuxtLink :to="`/note/${note.id}`"
+                        class="note-row-title text-truncate fw-semibold text-decoration-none" :title="note.title">
+                        {{ note.title }}
+                     </NuxtLink>
+
+                     <div class="action-buttons-group d-flex align-items-center gap-1 flex-shrink-0">
+                        <button class="btn-action-pill edit-btn" title="Edit note" @click="emit('edit', note)">
+                           <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn-action-pill delete-btn" title="Delete note" @click="emit('delete', note.id)">
+                           <i class="bi bi-trash3-fill"></i>
+                        </button>
+                     </div>
+                  </div>
+
+                  <div class="note-item-divider my-2"></div>
+
+                  <div class="d-flex align-items-center justify-content-between gap-2 fs-xs text-muted flex-wrap">
+                     <div class="d-flex align-items-center gap-2">
+                        <span v-if="note.is_private" class="pill-badge private">
+                           <i class="bi bi-lock-fill"></i> Private
+                        </span>
+                        <span v-else class="pill-badge public">
+                           <i class="bi bi-globe"></i> Public
+                        </span>
+                        <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
+                     </div>
+                     <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
                   </div>
                </div>
 
-               <div class="note-item-divider my-2"></div>
-
-               <div class="d-flex align-items-center justify-content-between gap-2 fs-xs text-muted flex-wrap">
-                  <div class="d-flex align-items-center gap-2">
-                     <span v-if="note.is_private" class="pill-badge private">
-                        <i class="bi bi-lock-fill"></i> Private
-                     </span>
-                     <span v-else class="pill-badge public">
-                        <i class="bi bi-globe"></i> Public
-                     </span>
-                     <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
+               <div v-if="!displayNotes.length" class="empty-state-box p-4 text-center">
+                  <div class="empty-icon-circle mb-2">
+                     <i class="bi bi-journal-x"></i>
                   </div>
-                  <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
+                  <h6 class="fs-sm fw-bold text-color mb-1">No notes found</h6>
+                  <p class="fs-xs text-muted mb-0">{{ searchQuery ? 'No notes match your search term.' : 'Start creating your first article on the left editor.' }}</p>
                </div>
-            </div>
-
-            <div v-if="!displayNotes.length && !loading" class="empty-state-box p-4 text-center">
-               <div class="empty-icon-circle mb-2">
-                  <i class="bi bi-journal-x"></i>
-               </div>
-               <h6 class="fs-sm fw-bold text-color mb-1">No notes found</h6>
-               <p class="fs-xs text-muted mb-0">{{ searchQuery ? 'No notes match your search term.' : 'Start creating your first article on the left editor.' }}</p>
-            </div>
+            </template>
          </div>
       </div>
 
@@ -362,6 +384,48 @@ const formatDate = (v: number | string) => {
 
 .spin {
    animation: spin 1s linear infinite;
+}
+
+.skeleton-title,
+.skeleton-badge,
+.skeleton-meta,
+.skeleton-btn {
+   background: linear-gradient(90deg,
+         var(--app-bg) 25%,
+         var(--app-border-color) 50%,
+         var(--app-bg) 75%);
+   background-size: 200% 100%;
+   animation: shimmer 1.5s infinite linear;
+   border-radius: 0.25rem;
+}
+
+.skeleton-title {
+   height: 16px;
+}
+
+.skeleton-badge {
+   width: 48px;
+   height: 18px;
+}
+
+.skeleton-meta {
+   height: 12px;
+}
+
+.skeleton-btn {
+   width: 28px;
+   height: 28px;
+   border-radius: 0.375rem;
+}
+
+@keyframes shimmer {
+   0% {
+      background-position: 200% 0;
+   }
+
+   100% {
+      background-position: -200% 0;
+   }
 }
 
 @keyframes spin {
