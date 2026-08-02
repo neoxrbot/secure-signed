@@ -60,9 +60,11 @@
                <NuxtLink to="/admin" class="fs-xs text-muted text-decoration-none">Manage</NuxtLink>
             </div>
             <Transition name="fade" mode="out-in">
-               <NuxtLink v-if="activeNote" :key="activeNote.id" :to="`/note/${activeNote.id}`" class="note-slide-card text-decoration-none">
+               <NuxtLink v-if="activeNote" :key="activeNote.id" :to="`/note/${activeNote.id}`"
+                  class="note-slide-card text-decoration-none">
                   <div class="note-grid-preview">
-                     <div v-for="cellIdx in noteCells" :key="cellIdx" class="note-cell" :class="{ 'active': cellIdx === activeIndex }"></div>
+                     <div v-for="cellIdx in noteCells" :key="cellIdx" class="note-cell"
+                        :class="{ 'active': cellIdx === activeIndex }"></div>
                   </div>
                   <div class="min-w-0">
                      <div class="fs-sm fw-bold text-color text-truncate">{{ activeNote.title }}</div>
@@ -72,7 +74,10 @@
                </NuxtLink>
                <div v-else class="note-slide-card empty" key="empty">
                   <i class="bi bi-journal-text fs-4 text-muted"></i>
-                  <div><div class="fs-sm fw-bold text-color">No public notes yet</div><div class="fs-xs text-muted">Admin can create markdown notes.</div></div>
+                  <div>
+                     <div class="fs-sm fw-bold text-color">No public notes yet</div>
+                     <div class="fs-xs text-muted">Admin can create markdown notes.</div>
+                  </div>
                </div>
             </Transition>
          </div>
