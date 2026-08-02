@@ -24,10 +24,10 @@
          </div>
       </div>
 
-      <div class="px-3 pt-3 pb-1">
+      <div class="px-3 py-2 border-bottom">
          <div class="search-box-wrapper">
             <i class="bi bi-search search-icon"></i>
-            <input v-model="searchQuery" type="text" class="form-control form-control-sm search-input"
+            <input v-model="searchQuery" type="text" class="form-control search-input"
                placeholder="Search note title...">
             <button v-if="searchQuery" class="btn-clear-search" @click="searchQuery = ''"><i
                   class="bi bi-x-lg"></i></button>
@@ -40,21 +40,23 @@
                :class="{ 'is-editing': activeEditId === note.id }">
                <div class="d-flex align-items-start justify-content-between gap-2 min-w-0">
                   <div class="min-w-0 flex-grow-1">
-                     <div class="d-flex align-items-center gap-2 mb-1.5 min-w-0">
+                     <div class="mb-1.5 min-w-0">
+                        <NuxtLink :to="`/note/${note.id}`"
+                           class="note-row-title text-truncate d-block fw-semibold text-decoration-none"
+                           :title="note.title">
+                           {{ note.title }}
+                        </NuxtLink>
+                     </div>
+                     <div class="d-flex align-items-center gap-2 fs-xs text-muted flex-wrap">
                         <span v-if="note.is_private" class="pill-badge private">
                            <i class="bi bi-lock-fill"></i> Private
                         </span>
                         <span v-else class="pill-badge public">
                            <i class="bi bi-globe"></i> Public
                         </span>
-                        <NuxtLink :to="`/note/${note.id}`"
-                           class="note-row-title text-truncate fw-semibold text-decoration-none" :title="note.title">
-                           {{ note.title }}
-                        </NuxtLink>
-                     </div>
-                     <div class="d-flex align-items-center gap-2 fs-xs text-muted">
+                        <span class="detail-divider"></span>
                         <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
-                        <span>•</span>
+                        <span class="detail-divider"></span>
                         <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
                      </div>
                   </div>
@@ -75,7 +77,8 @@
                   <i class="bi bi-journal-x"></i>
                </div>
                <h6 class="fs-sm fw-bold text-color mb-1">No notes found</h6>
-               <p class="fs-xs text-muted mb-0">{{ searchQuery ? 'No notes match your search term.' : 'Start creating your first article on the left editor.' }}</p>
+               <p class="fs-xs text-muted mb-0">{{ searchQuery ? 'No notes match your search term.' : 'Start creating
+                  your first article on the left editor.' }}</p>
             </div>
          </div>
       </div>
@@ -214,8 +217,8 @@ const formatDate = (v: number | string) => {
 
 .search-icon {
    position: absolute;
-   left: 0.65rem;
-   font-size: 0.75rem;
+   left: 0.75rem;
+   font-size: 0.8rem;
    color: var(--app-secondary-text-color);
    pointer-events: none;
 }
@@ -224,19 +227,18 @@ const formatDate = (v: number | string) => {
    background-color: var(--app-bg) !important;
    border-color: var(--app-border-color) !important;
    color: var(--app-text-color) !important;
-   padding-left: 2rem !important;
-   padding-right: 2rem !important;
-   font-size: 0.75rem;
+   padding: 0.5rem 2.2rem !important;
+   font-size: 0.775rem;
    border-radius: 0.375rem;
 }
 
 .btn-clear-search {
    position: absolute;
-   right: 0.5rem;
+   right: 0.65rem;
    border: none;
    background: transparent;
    color: var(--app-secondary-text-color);
-   font-size: 0.75rem;
+   font-size: 0.8rem;
    padding: 0;
    display: flex;
    align-items: center;
@@ -252,17 +254,24 @@ const formatDate = (v: number | string) => {
    border: 1px solid var(--app-border-color);
    border-radius: 0.5rem;
    padding: 0.75rem 0.85rem;
-   transition: all 0.2s ease;
+   transition: transform 0.2s ease;
 }
 
 .note-card-row:hover {
    transform: translateX(2px);
-   border-color: var(--app-secondary-text-color);
 }
 
 .note-card-row.is-editing {
    border-color: var(--app-accent-color);
    background-color: var(--app-card-bg);
+}
+
+.detail-divider {
+   width: 1px;
+   height: 10px;
+   background-color: var(--app-border-color);
+   display: inline-block;
+   flex-shrink: 0;
 }
 
 .pill-badge {
@@ -271,7 +280,7 @@ const formatDate = (v: number | string) => {
    gap: 0.25rem;
    font-size: 0.625rem;
    font-weight: 600;
-   padding: 0.2rem 0.45rem;
+   padding: 0.15rem 0.4rem;
    border-radius: 0.25rem;
    flex-shrink: 0;
 }
