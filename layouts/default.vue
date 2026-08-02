@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
-import { useRuntimeConfig, useRoute, useRouter, useNuxtApp } from '#app'
+import { useRuntimeConfig, useRoute, useRouter, useNuxtApp, useState } from '#app'
 import { usePageEffects } from '@/composables/usePageEffects'
 import { Offcanvas } from 'bootstrap'
 
@@ -118,7 +118,8 @@ const { isScrolled } = usePageEffects()
 const mobileSidebarRef = ref<HTMLElement | null>(null)
 let mobileSidebarInstance: Offcanvas | null = null
 const isSidebarOpen = ref(false)
-const isAdmin = ref(false)
+
+const isAdmin = useState<boolean>('admin-status', () => false)
 
 const navLinks = computed(() => {
    const links = [
@@ -161,7 +162,6 @@ const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
 const closeSidebar = () => { isSidebarOpen.value = false }
 
 watch(isSidebarOpen, (isOpen) => { if (mobileSidebarInstance) isOpen ? mobileSidebarInstance.show() : mobileSidebarInstance.hide() })
-watch(route, () => { checkAdminStatus() })
 
 onMounted(() => {
    checkAdminStatus()

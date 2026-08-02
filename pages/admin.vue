@@ -137,11 +137,10 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, nextTick } from 'vue'
-import { useNuxtApp } from '#app'
-import NotesManagement from '@/components/NotesManagement.vue'
+import { useNuxtApp, useState } from '#app'
 
 const { $api } = useNuxtApp()
-const isAdmin = ref(false)
+const isAdmin = useState<boolean>('admin-status', () => false)
 const loading = ref(false)
 const isUploadingPhoto = ref(false)
 const error = ref('')
@@ -159,12 +158,16 @@ const imageInput = ref<HTMLInputElement | null>(null)
 const form = ref<any>({ id: '', title: '', content: '', is_private: false })
 
 const check = async () => {
-   const r = await $api('/api/admin/me')
-   isAdmin.value = !!r.data.admin
-   if (isAdmin.value) {
-      fetchNotes()
-   } else {
-      nextTick(() => pinInputs.value[0]?.focus())
+   try {
+      const r = await $api('/api/admin/me')
+      isAdmin.value = !!r.data.admin
+      if (isAdmin.value) {
+         fetchNotes()
+      } else {
+         nextTick(() => pinInputs.value[0]?.focus())
+      }
+   } catch {
+      isAdmin.value = false
    }
 }
 
@@ -392,7 +395,7 @@ onMounted(check)
    left: 0;
    width: 100%;
    height: 100%;
-   background-color: var(--dark-overlay-bg, rgba(28, 28, 30, 0.75));
+   background-color: rgba(28, 28, 30, 0.75);
    border-radius: 0.375rem;
    backdrop-filter: blur(2px);
    z-index: 10;

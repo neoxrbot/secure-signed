@@ -1,76 +1,80 @@
 <template>
    <div class="container px-3 mb-5">
-      <div class="mb-3 d-flex align-items-center justify-content-between">
-         <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5" @click="goBack">
-            <i class="bi bi-arrow-left"></i>
-            <span>Back</span>
-         </button>
+      <div class="reader-max-width mx-auto">
+         <div class="mb-3 d-flex align-items-center justify-content-between">
+            <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5" @click="goBack">
+               <i class="bi bi-arrow-left"></i>
+               <span>Back</span>
+            </button>
 
-         <button v-if="!pending && !error"
-            class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5" @click="copyShareLink">
-            <i :class="copyStatus === 'Copied!' ? 'bi bi-check-lg text-success' : 'bi bi-share'"></i>
-            <span>{{ copyStatus }}</span>
-         </button>
-      </div>
-
-      <div class="note-reader-card">
-         <div v-if="pending" class="p-4 p-md-5">
-            <div class="mb-4 pb-3 border-bottom">
-               <div class="skeleton-pill mb-3"></div>
-               <div class="skeleton-title mb-2" style="width: 85%;"></div>
-               <div class="skeleton-title mb-3" style="width: 55%;"></div>
-               <div class="skeleton-meta"></div>
-            </div>
-
-            <div class="d-flex flex-column gap-2 mb-4">
-               <div class="skeleton-line" style="width: 100%;"></div>
-               <div class="skeleton-line" style="width: 92%;"></div>
-               <div class="skeleton-line" style="width: 96%;"></div>
-               <div class="skeleton-line" style="width: 78%;"></div>
-            </div>
-
-            <div class="skeleton-image mb-4"></div>
-
-            <div class="d-flex flex-column gap-2">
-               <div class="skeleton-line" style="width: 100%;"></div>
-               <div class="skeleton-line" style="width: 88%;"></div>
-               <div class="skeleton-line" style="width: 60%;"></div>
-            </div>
-         </div>
-
-         <div v-else-if="error" class="p-5 text-center">
-            <div class="error-icon-circle mb-3">
-               <i class="bi bi-exclamation-octagon"></i>
-            </div>
-            <h5 class="fw-bold text-color mb-1">Unable to Load Note</h5>
-            <p class="fs-xs text-muted mb-3">{{ error }}</p>
-            <button class="btn btn-sm btn-custom-accent px-3" @click="goBack">
-               Return
+            <button v-if="!pending && !error"
+               class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5" @click="copyShareLink">
+               <i :class="copyStatus === 'Copied!' ? 'bi bi-check-lg text-success' : 'bi bi-share'"></i>
+               <span>{{ copyStatus }}</span>
             </button>
          </div>
 
-         <article v-else class="p-4 p-md-5">
-            <header class="mb-4 pb-3 border-bottom">
-               <div class="d-flex align-items-center gap-2 mb-2">
-                  <span v-if="note.is_private" class="pill-badge private">
-                     <i class="bi bi-lock-fill me-1"></i>Private Note
-                  </span>
-                  <span v-else class="pill-badge public">
-                     <i class="bi bi-globe me-1"></i>Public Note
-                  </span>
+         <div class="note-reader-card">
+            <div v-if="pending" class="p-4 p-md-5">
+               <div class="mb-4 pb-3 border-bottom">
+                  <div class="skeleton-pill mb-3"></div>
+                  <div class="skeleton-title mb-2" style="width: 85%;"></div>
+                  <div class="skeleton-title mb-3" style="width: 55%;"></div>
+                  <div class="skeleton-meta"></div>
                </div>
 
-               <h1 class="article-title mb-3 text-color">{{ note.title }}</h1>
-
-               <div class="d-flex align-items-center gap-3 fs-xs text-muted flex-wrap">
-                  <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
-                  <span>•</span>
-                  <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
+               <div class="d-flex flex-column gap-2 mb-4">
+                  <div class="skeleton-line" style="width: 100%;"></div>
+                  <div class="skeleton-line" style="width: 92%;"></div>
+                  <div class="skeleton-line" style="width: 96%;"></div>
+                  <div class="skeleton-line" style="width: 78%;"></div>
                </div>
-            </header>
 
-            <div class="markdown-body" v-html="html"></div>
-         </article>
+               <div class="skeleton-image mb-4"></div>
+
+               <div class="d-flex flex-column gap-2">
+                  <div class="skeleton-line" style="width: 100%;"></div>
+                  <div class="skeleton-line" style="width: 88%;"></div>
+                  <div class="skeleton-line" style="width: 60%;"></div>
+               </div>
+            </div>
+
+            <div v-else-if="error" class="p-5 text-center">
+               <div class="error-icon-circle mb-3">
+                  <i class="bi bi-exclamation-octagon"></i>
+               </div>
+               <h5 class="fw-bold text-color mb-1">Unable to Load Note</h5>
+               <p class="fs-xs text-muted mb-3">{{ error }}</p>
+               <button class="btn btn-sm btn-custom-accent px-3" @click="goBack">
+                  Return
+               </button>
+            </div>
+
+            <article v-else class="p-4 p-md-5">
+               <header class="mb-4 pb-3 border-bottom">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                     <span v-if="note.is_private" class="pill-badge private">
+                        <i class="bi bi-lock-fill me-1"></i>Private Note
+                     </span>
+                     <span v-else class="pill-badge public">
+                        <i class="bi bi-globe me-1"></i>Public Note
+                     </span>
+                  </div>
+
+                  <h1 class="article-title mb-3 text-color">{{ note.title }}</h1>
+
+                  <div class="d-flex align-items-center gap-3 fs-xs text-muted flex-wrap">
+                     <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
+                     <span>•</span>
+                     <span><i class="bi bi-clock me-1 opacity-75"></i>{{ readingTime }} min read</span>
+                     <span>•</span>
+                     <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
+                  </div>
+               </header>
+
+               <div class="markdown-body" v-html="html"></div>
+            </article>
+         </div>
       </div>
    </div>
 </template>
@@ -91,6 +95,11 @@ const copyStatus = ref('Share Link')
 
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
 const html = computed(() => md.render(note.value.content || ''))
+
+const readingTime = computed(() => {
+   const words = (note.value.content || '').trim().split(/\s+/).length
+   return Math.max(1, Math.ceil(words / 200))
+})
 
 useHead({
    title: computed(() => note.value.title ? `${note.value.title} - Note Reader` : 'Note Reader')
@@ -171,6 +180,10 @@ onMounted(async () => {
    color: var(--app-secondary-text-color) !important;
 }
 
+.reader-max-width {
+   max-width: 820px;
+}
+
 .border-bottom {
    border-color: var(--app-border-color) !important;
 }
@@ -183,9 +196,10 @@ onMounted(async () => {
 }
 
 .article-title {
-   font-size: 1.75rem;
+   font-size: 1.85rem;
    font-weight: 700;
    line-height: 1.3;
+   letter-spacing: -0.02em;
 }
 
 .pill-badge {
@@ -273,8 +287,8 @@ onMounted(async () => {
 
 .markdown-body {
    color: var(--app-text-color);
-   line-height: 1.7;
-   font-size: 0.95rem;
+   line-height: 1.8;
+   font-size: 1rem;
 }
 
 .markdown-body :deep(h1),
@@ -285,23 +299,25 @@ onMounted(async () => {
 .markdown-body :deep(h6) {
    color: var(--app-text-color);
    font-weight: 700;
-   margin-top: 1.5rem;
-   margin-bottom: 0.75rem;
+   margin-top: 1.75rem;
+   margin-bottom: 0.85rem;
+   line-height: 1.3;
 }
 
 .markdown-body :deep(p) {
-   margin-bottom: 1rem;
+   margin-bottom: 1.2rem;
 }
 
 .markdown-body :deep(a) {
    color: var(--app-accent-color);
    text-decoration: underline;
+   text-underline-offset: 3px;
 }
 
 .markdown-body :deep(code) {
    background-color: var(--app-bg);
    color: var(--app-accent-color);
-   padding: 0.2rem 0.4rem;
+   padding: 0.2rem 0.45rem;
    border-radius: 0.25rem;
    font-size: 0.85em;
    border: 1px solid var(--app-border-color);
@@ -310,11 +326,11 @@ onMounted(async () => {
 .markdown-body :deep(pre) {
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
-   padding: 1rem;
+   padding: 1.25rem;
    border-radius: 0.5rem;
    overflow-x: auto;
-   margin-top: 1rem;
-   margin-bottom: 1rem;
+   margin-top: 1.25rem;
+   margin-bottom: 1.25rem;
 }
 
 .markdown-body :deep(pre code) {
@@ -326,8 +342,10 @@ onMounted(async () => {
 
 .markdown-body :deep(blockquote) {
    border-left: 3px solid var(--app-accent-color);
-   padding-left: 1rem;
+   padding-left: 1.25rem;
    margin-left: 0;
+   margin-top: 1.25rem;
+   margin-bottom: 1.25rem;
    color: var(--app-secondary-text-color);
    font-style: italic;
 }
@@ -337,21 +355,21 @@ onMounted(async () => {
    height: auto;
    border-radius: 0.5rem;
    border: 1px solid var(--app-border-color);
-   margin-top: 0.75rem;
-   margin-bottom: 0.75rem;
+   margin-top: 1rem;
+   margin-bottom: 1rem;
 }
 
 .markdown-body :deep(table) {
    width: 100%;
    border-collapse: collapse;
-   margin-top: 1rem;
-   margin-bottom: 1rem;
+   margin-top: 1.25rem;
+   margin-bottom: 1.25rem;
 }
 
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
    border: 1px solid var(--app-border-color);
-   padding: 0.5rem 0.75rem;
+   padding: 0.6rem 0.85rem;
 }
 
 .markdown-body :deep(th) {
