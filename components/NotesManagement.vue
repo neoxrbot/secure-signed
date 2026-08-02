@@ -391,23 +391,14 @@ onMounted(check)
             </div>
 
             <div class="pin-inputs-wrapper d-flex justify-content-center gap-2 mb-4" @paste="handlePaste">
-               <input
-                  v-for="(digit, idx) in digits"
-                  :key="idx"
-                  :ref="el => pinInputs[idx] = el as HTMLInputElement"
-                  v-model="digits[idx]"
-                  type="text"
-                  inputmode="numeric"
-                  maxlength="1"
-                  class="form-control pin-box"
-                  :disabled="loading"
-                  @input="handleInput($event, idx)"
-                  @keydown="handleKeydown($event, idx)"
-                  @focus="handleFocus($event)"
-               />
+               <input v-for="(digit, idx) in digits" :key="idx" :ref="el => pinInputs[idx] = el as HTMLInputElement"
+                  v-model="digits[idx]" type="text" inputmode="numeric" maxlength="1" class="form-control pin-box"
+                  :disabled="loading" @input="handleInput($event, idx)" @keydown="handleKeydown($event, idx)"
+                  @focus="handleFocus($event)" />
             </div>
 
-            <button class="btn btn-custom-accent w-100 py-2 d-flex align-items-center justify-content-center gap-2" :disabled="loading || pin.length < 6">
+            <button class="btn btn-custom-accent w-100 py-2 d-flex align-items-center justify-content-center gap-2"
+               :disabled="loading || pin.length < 6">
                <span v-if="loading" class="spinner-border spinner-border-sm"></span>
                <i v-else class="bi bi-unlock-fill"></i>
                <span>{{ loading ? 'Verifying...' : 'Unlock Admin' }}</span>
@@ -449,32 +440,48 @@ onMounted(check)
                   <div class="p-4 flex-grow-1">
                      <form @submit.prevent="saveNote">
                         <div class="mb-3">
-                           <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Title</label>
-                           <input v-model="form.title" class="form-control" placeholder="Enter note title..." required :disabled="loading">
+                           <label
+                              class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Title</label>
+                           <input v-model="form.title" class="form-control" placeholder="Enter note title..." required
+                              :disabled="loading">
                         </div>
 
                         <div class="mb-3">
                            <div class="d-flex justify-content-between align-items-center mb-2">
-                              <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Markdown Content</label>
+                              <label
+                                 class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Markdown
+                                 Content</label>
                               <div class="toolbar d-flex align-items-center gap-1">
-                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**','**')" title="Bold"><i class="bi bi-type-bold"></i></button>
-                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_','_')" title="Italic"><i class="bi bi-type-italic"></i></button>
-                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="insert('\n- ')" title="List"><i class="bi bi-list-ul"></i></button>
-                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`','`')" title="Code"><i class="bi bi-code"></i></button>
-                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="imageInput?.click()" title="Upload Photo"><i class="bi bi-image"></i> Photo</button>
-                                 <input ref="imageInput" type="file" class="d-none" accept="image/*" @change="uploadPhoto">
+                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')"
+                                    title="Bold"><i class="bi bi-type-bold"></i></button>
+                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')"
+                                    title="Italic"><i class="bi bi-type-italic"></i></button>
+                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="insert('\n- ')"
+                                    title="List"><i class="bi bi-list-ul"></i></button>
+                                 <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')"
+                                    title="Code"><i class="bi bi-code"></i></button>
+                                 <button type="button" class="btn btn-xs btn-outline-secondary"
+                                    @click="imageInput?.click()" title="Upload Photo"><i class="bi bi-image"></i>
+                                    Photo</button>
+                                 <input ref="imageInput" type="file" class="d-none" accept="image/*"
+                                    @change="uploadPhoto">
                               </div>
                            </div>
-                           <textarea ref="editor" v-model="form.content" class="form-control note-textarea" rows="11" placeholder="Write markdown content here..." required :disabled="loading"></textarea>
+                           <textarea ref="editor" v-model="form.content" class="form-control note-textarea" rows="11"
+                              placeholder="Write markdown content here..." required :disabled="loading"></textarea>
                         </div>
 
                         <div class="form-check form-switch mb-4">
-                           <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox" :disabled="loading">
-                           <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private note (admin visible only)</label>
+                           <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox"
+                              :disabled="loading">
+                           <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private note
+                              (admin visible only)</label>
                         </div>
 
                         <div class="d-flex gap-2">
-                           <button class="btn btn-custom-accent py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2" :disabled="loading">
+                           <button
+                              class="btn btn-custom-accent py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2"
+                              :disabled="loading">
                               <span v-if="loading" class="spinner-border spinner-border-sm"></span>
                               <i v-else class="bi bi-check-circle-fill"></i>
                               <span>{{ form.id ? 'Update Article' : 'Publish Article' }}</span>
@@ -486,16 +493,8 @@ onMounted(check)
             </div>
 
             <div class="col-lg-5">
-               <NotesManagement
-                  :notes="notes"
-                  :total-notes="totalNotes"
-                  :loading="loading"
-                  :active-edit-id="form.id"
-                  @edit="editNote"
-                  @delete="removeNote"
-                  @load-more="loadMoreNotes"
-                  @refresh="refreshNotes"
-               />
+               <NotesManagement :notes="notes" :total-notes="totalNotes" :loading="loading" :active-edit-id="form.id"
+                  @edit="editNote" @delete="removeNote" @load-more="loadMoreNotes" @refresh="refreshNotes" />
             </div>
          </div>
          <Alert type="danger mt-3" :show="!!error">{{ error }}</Alert>
@@ -670,13 +669,30 @@ onMounted(check)
 </script>
 
 <style scoped>
-.fs-xs { font-size: 0.75rem; }
-.fs-sm { font-size: 0.875rem; }
-.btn-xs { font-size: 0.75rem; padding: 0.2rem 0.5rem; }
-.tracking-wider { letter-spacing: 0.05em; }
+.fs-xs {
+   font-size: 0.75rem;
+}
 
-.text-color { color: var(--app-text-color) !important; }
-.text-muted { color: var(--app-secondary-text-color) !important; }
+.fs-sm {
+   font-size: 0.875rem;
+}
+
+.btn-xs {
+   font-size: 0.75rem;
+   padding: 0.2rem 0.5rem;
+}
+
+.tracking-wider {
+   letter-spacing: 0.05em;
+}
+
+.text-color {
+   color: var(--app-text-color) !important;
+}
+
+.text-muted {
+   color: var(--app-secondary-text-color) !important;
+}
 
 .border-bottom {
    border-color: var(--app-border-color) !important;
