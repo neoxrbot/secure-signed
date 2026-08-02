@@ -77,8 +77,7 @@
                   <i class="bi bi-journal-x"></i>
                </div>
                <h6 class="fs-sm fw-bold text-color mb-1">No notes found</h6>
-               <p class="fs-xs text-muted mb-0">{{ searchQuery ? 'No notes match your search term.' : 'Start creating
-                  your first article on the left editor.' }}</p>
+               <p class="fs-xs text-muted mb-0">{{ searchQuery ? 'No notes match your search term.' : 'Start creating your first article on the left editor.' }}</p>
             </div>
          </div>
       </div>
