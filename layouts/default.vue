@@ -11,14 +11,19 @@
             <div class="d-flex align-items-center gap-3">
                <div class="d-none d-md-flex align-items-center">
                   <ul class="navbar-nav flex-row gap-2">
-                     <template v-for="link in navLinks" :key="link.text">
-                        <li class="nav-item">
-                           <a v-if="isExternalLink(link.href)" class="nav-link custom-link" :href="link.href"
-                              target="_blank">{{ link.text }}</a>
-                           <NuxtLink v-else class="nav-link custom-link" :to="link.href" active-class="active">{{
-                              link.text }}</NuxtLink>
-                        </li>
-                     </template>
+                     <li v-for="link in navLinks" :key="link.text" class="nav-item">
+                        <button v-if="link.action === 'logout'" class="nav-link custom-link border-0 bg-transparent"
+                           @click="handleLogout">
+                           {{ link.text }}
+                        </button>
+                        <a v-else-if="isExternalLink(link.href)" class="nav-link custom-link" :href="link.href"
+                           target="_blank">
+                           {{ link.text }}
+                        </a>
+                        <NuxtLink v-else class="nav-link custom-link" :to="link.href" active-class="active">
+                           {{ link.text }}
+                        </NuxtLink>
+                     </li>
                   </ul>
                </div>
                <Theme />
@@ -46,25 +51,31 @@
             </div>
 
             <ul class="nav flex-column gap-2 mt-4">
-               <template v-for="link in navLinks" :key="link.text">
-                  <li class="nav-item">
-                     <a v-if="isExternalLink(link.href)" class="nav-link sidebar-pill" :href="link.href"
-                        target="_blank">
-                        <div class="d-flex align-items-center">
-                           <span class="icon-box"><i :class="link.icon"></i></span>
-                           {{ link.text }}
-                        </div>
-                        <i class="bi bi-box-arrow-up-right small opacity-50"></i>
-                     </a>
-                     <NuxtLink v-else class="nav-link sidebar-pill" :to="link.href" active-class="active"
-                        @click="closeSidebar">
-                        <div class="d-flex align-items-center">
-                           <span class="icon-box"><i :class="link.icon"></i></span>
-                           {{ link.text }}
-                        </div>
-                     </NuxtLink>
-                  </li>
-               </template>
+               <li v-for="link in navLinks" :key="link.text" class="nav-item">
+                  <button v-if="link.action === 'logout'"
+                     class="nav-link sidebar-pill border-0 bg-transparent w-100 text-start"
+                     @click="handleLogout(); closeSidebar()">
+                     <div class="d-flex align-items-center">
+                        <span class="icon-box"><i :class="link.icon"></i></span>
+                        {{ link.text }}
+                     </div>
+                  </button>
+                  <a v-else-if="isExternalLink(link.href)" class="nav-link sidebar-pill" :href="link.href"
+                     target="_blank">
+                     <div class="d-flex align-items-center">
+                        <span class="icon-box"><i :class="link.icon"></i></span>
+                        {{ link.text }}
+                     </div>
+                     <i class="bi bi-box-arrow-up-right small opacity-50"></i>
+                  </a>
+                  <NuxtLink v-else class="nav-link sidebar-pill" :to="link.href" active-class="active"
+                     @click="closeSidebar">
+                     <div class="d-flex align-items-center">
+                        <span class="icon-box"><i :class="link.icon"></i></span>
+                        {{ link.text }}
+                     </div>
+                  </NuxtLink>
+               </li>
             </ul>
 
             <div class="mt-auto">
@@ -93,23 +104,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
-import { useRuntimeConfig, useRoute } from '#app'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { useRuntimeConfig, useRoute, useRouter, useNuxtApp } from '#app'
 import { usePageEffects } from '@/composables/usePageEffects'
 import { Offcanvas } from 'bootstrap'
 
 const config = useRuntimeConfig()
+const route = useRoute()
+const router = useRouter()
+const { $api } = useNuxtApp()
 const { isScrolled } = usePageEffects()
 
 const mobileSidebarRef = ref<HTMLElement | null>(null)
 let mobileSidebarInstance: Offcanvas | null = null
 const isSidebarOpen = ref(false)
+const isAdmin = ref(false)
 
-const navLinks = ref([
-   { text: 'Home', href: '/', icon: 'bi bi-house' },
-   { text: 'Documentation', href: '/docs', icon: 'bi bi-book' },
-   { text: 'Admin Notes', href: '/admin', icon: 'bi bi-journal-richtext' }
-])
+const navLinks = computed(() => {
+   const links = [
+      { text: 'Home', href: '/', icon: 'bi bi-house' },
+      { text: 'Documentation', href: '/docs', icon: 'bi bi-book' }
+   ]
+
+   if (isAdmin.value) {
+      links.push({ text: 'Workspace', href: '/admin', icon: 'bi bi-person-badge-fill' })
+      links.push({ text: 'Logout', href: '#', icon: 'bi bi-box-arrow-right', action: 'logout' })
+   } else {
+      links.push({ text: 'Login', href: '/admin', icon: 'bi bi-shield-lock-fill' })
+   }
+
+   return links
+})
+
+const checkAdminStatus = async () => {
+   try {
+      const r: any = await $api('/api/admin/me')
+      isAdmin.value = !!r?.data?.admin
+   } catch {
+      isAdmin.value = false
+   }
+}
+
+const handleLogout = async () => {
+   try {
+      await $api('/api/admin/logout', { method: 'POST' })
+      isAdmin.value = false
+      if (route.path === '/admin') {
+         router.push('/')
+      }
+   } catch { }
+}
 
 const isExternalLink = (href: string) => href.startsWith('http')
 
@@ -117,14 +161,19 @@ const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value }
 const closeSidebar = () => { isSidebarOpen.value = false }
 
 watch(isSidebarOpen, (isOpen) => { if (mobileSidebarInstance) isOpen ? mobileSidebarInstance.show() : mobileSidebarInstance.hide() })
+watch(route, () => { checkAdminStatus() })
 
 onMounted(() => {
+   checkAdminStatus()
    if (mobileSidebarRef.value && process.client) {
       mobileSidebarInstance = new Offcanvas(mobileSidebarRef.value, { backdrop: false, keyboard: true })
       mobileSidebarRef.value.addEventListener('hidden.bs.offcanvas', () => { isSidebarOpen.value = false })
    }
 })
-onUnmounted(() => { if (mobileSidebarRef.value) mobileSidebarRef.value.removeEventListener('hidden.bs.offcanvas', () => { }) })
+
+onUnmounted(() => {
+   if (mobileSidebarRef.value) mobileSidebarRef.value.removeEventListener('hidden.bs.offcanvas', () => { })
+})
 </script>
 
 <style scoped>
@@ -141,7 +190,6 @@ body.light-mode .navbar {
 .scrolled-nav {
    background-color: var(--dark-card-bg);
    border-bottom: 1px solid var(--app-border-color);
-
 }
 
 body.light-mode .scrolled-nav {
@@ -177,7 +225,6 @@ body.light-mode .scrolled-nav {
    color: var(--app-text-color);
 }
 
-/* DESKTOP LINKS */
 .nav-link.custom-link {
    font-size: 0.9rem;
    font-weight: 500;
@@ -198,7 +245,6 @@ body.light-mode .scrolled-nav {
    font-weight: 600;
 }
 
-/* SIDEBAR STYLES */
 .full-sidebar {
    background-color: var(--app-card-bg);
    border-right: 1px solid var(--app-border-color);
@@ -265,7 +311,6 @@ body.light-mode .scrolled-nav {
    color: var(--app-accent-text-color) !important;
 }
 
-/* SHOP FOOTER CARD */
 .shop-card {
    display: block;
    text-decoration: none;
@@ -330,7 +375,6 @@ body.light-mode .shop-desc {
    color: var(--app-accent-text-color);
 }
 
-/* UTILS */
 .sidebar-overlay {
    position: fixed;
    inset: 0;
@@ -341,12 +385,12 @@ body.light-mode .shop-desc {
 
 .fade-enter-active,
 .fade-leave-active {
-   transition: opacity 0.3s ease
+   transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,
 .fade-leave-to {
-   opacity: 0
+   opacity: 0;
 }
 
 .page-content {

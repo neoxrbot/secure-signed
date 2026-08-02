@@ -107,8 +107,7 @@
                         <div class="form-check form-switch mb-4">
                            <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox"
                               :disabled="loading || isUploadingPhoto">
-                           <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private note
-                              (admin visible only)</label>
+                           <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private</label>
                         </div>
 
                         <div class="d-flex gap-2">
