@@ -104,3 +104,38 @@ export async function recordCdnDownload(db, token, bytes) {
       'stats:total_download_size': bytes || 0
    })
 }
+// --- ADMIN NOTES ---
+export async function createNote(db, { id, title, content, isPrivate }) {
+   const now = Date.now()
+   await db.prepare(
+      'INSERT INTO notes (id, title, content, is_private, reads, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?5)'
+   ).bind(id, title, content, isPrivate ? 1 : 0, now).run()
+   return getNoteById(db, id)
+}
+
+export async function listNotes(db, { includePrivate = false, limit = 20 } = {}) {
+   const query = includePrivate
+      ? 'SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes ORDER BY created_at DESC LIMIT ?1'
+      : 'SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes WHERE is_private = 0 ORDER BY created_at DESC LIMIT ?1'
+   const { results } = await db.prepare(query).bind(limit).all()
+   return results || []
+}
+
+export async function getNoteById(db, id) {
+   return db.prepare('SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes WHERE id = ?1').bind(id).first()
+}
+
+export async function updateNote(db, id, { title, content, isPrivate }) {
+   await db.prepare(
+      'UPDATE notes SET title = ?1, content = ?2, is_private = ?3, updated_at = ?4 WHERE id = ?5'
+   ).bind(title, content, isPrivate ? 1 : 0, Date.now(), id).run()
+   return getNoteById(db, id)
+}
+
+export async function deleteNote(db, id) {
+   return db.prepare('DELETE FROM notes WHERE id = ?1').bind(id).run()
+}
+
+export async function incrementNoteReads(db, id) {
+   return db.prepare('UPDATE notes SET reads = reads + 1 WHERE id = ?1').bind(id).run()
+}
