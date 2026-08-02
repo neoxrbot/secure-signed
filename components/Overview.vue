@@ -62,7 +62,7 @@
             <Transition name="fade" mode="out-in">
                <NuxtLink v-if="activeNote" :key="activeNote.id" :to="`/note/${activeNote.id}`" class="note-slide-card text-decoration-none">
                   <div class="note-grid-preview">
-                     <div v-for="cell in noteCells" :key="cell" class="note-cell"></div>
+                     <div v-for="cellIdx in noteCells" :key="cellIdx" class="note-cell" :class="{ 'active': cellIdx === activeIndex }"></div>
                   </div>
                   <div class="min-w-0">
                      <div class="fs-sm fw-bold text-color text-truncate">{{ activeNote.title }}</div>
@@ -146,10 +146,12 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
    border-radius: 0.3rem;
    background: var(--app-card-bg);
    border: 1px solid var(--app-border-color);
+   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
-.note-cell:first-child {
+.note-cell.active {
    background: var(--app-accent-color);
+   border-color: var(--app-accent-color);
 }
 
 .min-w-0 {

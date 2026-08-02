@@ -30,6 +30,7 @@ INSERT OR IGNORE INTO stats (key, value) VALUES
 ('stats:total_proxied', '0'),
 ('stats:total_download_size', '0'),
 ('stats:total_hits', '0');
+
 CREATE TABLE IF NOT EXISTS notes (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
