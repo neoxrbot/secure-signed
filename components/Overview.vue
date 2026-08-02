@@ -97,7 +97,7 @@ const noteCells = computed(() => Array.from({ length: Math.min(notes.value.lengt
 const noteExcerpt = (content = '') => content.replace(/[#*_`>\-!\[\]()]/g, '').slice(0, 90)
 const fetchNotes = async () => {
    try {
-      const response: any = await $fetch('/api/notes')
+      const response: any = await $fetch('/api/notes?public=1')
       notes.value = (response.data || []).slice(0, 5)
    } catch (error) {
       notes.value = []
