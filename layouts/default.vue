@@ -107,7 +107,8 @@ const isSidebarOpen = ref(false)
 
 const navLinks = ref([
    { text: 'Home', href: '/', icon: 'bi bi-house' },
-   { text: 'Documentation', href: '/docs', icon: 'bi bi-book' }
+   { text: 'Documentation', href: '/docs', icon: 'bi bi-book' },
+   { text: 'Admin Notes', href: '/admin', icon: 'bi bi-journal-richtext' }
 ])
 
 const isExternalLink = (href: string) => href.startsWith('http')

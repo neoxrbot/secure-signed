@@ -8,6 +8,7 @@ CHAT_ID = '6853041217'
 CDN_MAX_SIZE_MB = "500"
 CDN_EXPIRY_MINUTES = "15"
 ALLOWED_CDN_DOMAINS = "neoxr.eu, *.neoxr.eu"
+ADMIN_PIN = "123456"
 
 [[d1_databases]]
 binding = "DB"

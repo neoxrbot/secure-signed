@@ -54,36 +54,106 @@
                class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-xs">Active</span>
          </div>
 
-         <div class="api-spec-list border-top pt-3">
-            <div class="d-flex justify-content-between align-items-center fs-xs mb-2">
-               <span class="text-muted"><i class="bi bi-code-slash me-1"></i> REST API Format</span>
-               <span class="fw-semibold text-color">JSON</span>
+         <div class="notes-slider border-top pt-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+               <span class="fs-xs fw-bold text-muted text-uppercase">Latest Notes</span>
+               <NuxtLink to="/admin" class="fs-xs text-muted text-decoration-none">Manage</NuxtLink>
             </div>
-            <div class="d-flex justify-content-between align-items-center fs-xs mb-2">
-               <span class="text-muted"><i class="bi bi-lightning-charge me-1"></i> Speed Limit</span>
-               <span class="fw-semibold text-color">Unlimited</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center fs-xs">
-               <span class="text-muted"><i class="bi bi-lock me-1"></i> Signature Support</span>
-               <span class="fw-semibold text-color">HMAC-SHA256</span>
-            </div>
+            <Transition name="fade" mode="out-in">
+               <NuxtLink v-if="activeNote" :key="activeNote.id" :to="`/note/${activeNote.id}`" class="note-slide-card text-decoration-none">
+                  <div class="note-grid-preview">
+                     <div v-for="cell in noteCells" :key="cell" class="note-cell"></div>
+                  </div>
+                  <div class="min-w-0">
+                     <div class="fs-sm fw-bold text-color text-truncate">{{ activeNote.title }}</div>
+                     <div class="fs-xs text-muted text-truncate">{{ noteExcerpt(activeNote.content) }}</div>
+                     <div class="fs-xs text-muted mt-1">{{ activeNote.reads || 0 }} reads</div>
+                  </div>
+               </NuxtLink>
+               <div v-else class="note-slide-card empty" key="empty">
+                  <i class="bi bi-journal-text fs-4 text-muted"></i>
+                  <div><div class="fs-sm fw-bold text-color">No public notes yet</div><div class="fs-xs text-muted">Admin can create markdown notes.</div></div>
+               </div>
+            </Transition>
          </div>
       </div>
    </div>
 </template>
 
 <script lang="ts" setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+
 defineProps<{
    stats: Record<string, any>
    isLoading?: boolean
 }>()
 
 const emit = defineEmits(['refresh'])
+const notes = ref<any[]>([])
+const activeIndex = ref(0)
+let timer: ReturnType<typeof setInterval> | null = null
+const activeNote = computed(() => notes.value[activeIndex.value] || null)
+const noteCells = computed(() => Array.from({ length: Math.min(notes.value.length || 1, 5) }, (_, i) => i))
+const noteExcerpt = (content = '') => content.replace(/[#*_`>\-!\[\]()]/g, '').slice(0, 90)
+const fetchNotes = async () => {
+   try {
+      const response: any = await $fetch('/api/notes')
+      notes.value = (response.data || []).slice(0, 5)
+   } catch (error) {
+      notes.value = []
+   }
+}
+onMounted(() => {
+   fetchNotes()
+   timer = setInterval(() => { if (notes.value.length > 1) activeIndex.value = (activeIndex.value + 1) % notes.value.length }, 3500)
+})
+onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
 .fs-xs {
    font-size: 0.75rem;
+}
+
+.fs-sm {
+   font-size: 0.875rem;
+}
+
+.note-slide-card {
+   display: grid;
+   grid-template-columns: 54px minmax(0, 1fr);
+   gap: 0.75rem;
+   align-items: center;
+   min-height: 74px;
+   padding: 0.8rem;
+   background: var(--app-bg);
+   border: 1px solid var(--app-border-color);
+   border-radius: 0.625rem;
+}
+
+.note-slide-card.empty {
+   display: flex;
+}
+
+.note-grid-preview {
+   display: grid;
+   grid-template-columns: repeat(2, 1fr);
+   gap: 4px;
+}
+
+.note-cell {
+   aspect-ratio: 1 / 1;
+   border-radius: 0.3rem;
+   background: var(--app-card-bg);
+   border: 1px solid var(--app-border-color);
+}
+
+.note-cell:first-child {
+   background: var(--app-accent-color);
+}
+
+.min-w-0 {
+   min-width: 0;
 }
 
 .text-color {
