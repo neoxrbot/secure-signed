@@ -57,7 +57,7 @@
          <div class="notes-slider border-top pt-3">
             <div class="d-flex align-items-center justify-content-between mb-2">
                <span class="fs-xs fw-bold text-muted text-uppercase">Latest Notes</span>
-               <NuxtLink to="/admin" class="fs-xs text-muted text-decoration-none">Manage</NuxtLink>
+               <!-- <NuxtLink to="/admin" class="fs-xs text-muted text-decoration-none">Manage</NuxtLink> -->
             </div>
             <Transition name="fade" mode="out-in">
                <NuxtLink v-if="activeNote" :key="activeNote.id" :to="`/note/${activeNote.id}`"
