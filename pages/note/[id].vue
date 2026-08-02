@@ -1,78 +1,72 @@
 <template>
    <div class="container px-3 mb-5">
       <div class="reader-max-width mx-auto">
-         <div class="mb-3 d-flex align-items-center justify-content-between">
-            <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5" @click="goBack">
-               <i class="bi bi-arrow-left"></i>
-               <span>Back</span>
-            </button>
-
-            <button v-if="!pending && !error"
-               class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5" @click="copyShareLink">
-               <i :class="copyStatus === 'Copied!' ? 'bi bi-check-lg text-success' : 'bi bi-share'"></i>
-               <span>{{ copyStatus }}</span>
-            </button>
-         </div>
-
          <div class="note-reader-card">
-            <div v-if="pending" class="p-4 p-md-5">
-               <div class="mb-4 pb-3 border-bottom">
-                  <div class="skeleton-pill mb-3"></div>
-                  <div class="skeleton-title mb-2" style="width: 85%;"></div>
-                  <div class="skeleton-title mb-3" style="width: 55%;"></div>
-                  <div class="skeleton-meta"></div>
+            <div v-if="pending" class="p-3 p-md-4">
+               <div class="d-flex align-items-center justify-content-between pb-3 border-bottom mb-3">
+                  <div class="skeleton-btn"></div>
+                  <div class="skeleton-pill"></div>
+                  <div class="skeleton-btn"></div>
                </div>
-
-               <div class="d-flex flex-column gap-2 mb-4">
+               <div class="skeleton-title mb-2" style="width: 80%;"></div>
+               <div class="skeleton-title mb-3" style="width: 50%;"></div>
+               <div class="skeleton-meta mb-3"></div>
+               <div class="d-flex flex-column gap-2 mb-3">
                   <div class="skeleton-line" style="width: 100%;"></div>
-                  <div class="skeleton-line" style="width: 92%;"></div>
-                  <div class="skeleton-line" style="width: 96%;"></div>
-                  <div class="skeleton-line" style="width: 78%;"></div>
+                  <div class="skeleton-line" style="width: 90%;"></div>
+                  <div class="skeleton-line" style="width: 95%;"></div>
+                  <div class="skeleton-line" style="width: 70%;"></div>
                </div>
-
-               <div class="skeleton-image mb-4"></div>
-
-               <div class="d-flex flex-column gap-2">
-                  <div class="skeleton-line" style="width: 100%;"></div>
-                  <div class="skeleton-line" style="width: 88%;"></div>
-                  <div class="skeleton-line" style="width: 60%;"></div>
-               </div>
+               <div class="skeleton-image mb-3"></div>
             </div>
 
-            <div v-else-if="error" class="p-5 text-center">
+            <div v-else-if="error" class="p-4 p-md-5 text-center">
                <div class="error-icon-circle mb-3">
                   <i class="bi bi-exclamation-octagon"></i>
                </div>
-               <h5 class="fw-bold text-color mb-1">Unable to Load Note</h5>
+               <h6 class="fw-bold text-color mb-1">Unable to Load Note</h6>
                <p class="fs-xs text-muted mb-3">{{ error }}</p>
                <button class="btn btn-sm btn-custom-accent px-3" @click="goBack">
                   Return
                </button>
             </div>
 
-            <article v-else class="p-4 p-md-5">
-               <header class="mb-4 pb-3 border-bottom">
-                  <div class="d-flex align-items-center gap-2 mb-2">
+            <article v-else>
+               <div class="card-header-bar p-3 border-bottom d-flex align-items-center justify-content-between gap-2">
+                  <button class="btn btn-sm btn-outline-secondary btn-action-pill" @click="goBack" title="Back">
+                     <i class="bi bi-arrow-left"></i>
+                     <span class="d-none d-sm-inline ms-1">Back</span>
+                  </button>
+
+                  <div class="d-flex align-items-center">
                      <span v-if="note.is_private" class="pill-badge private">
-                        <i class="bi bi-lock-fill me-1"></i>Private Note
+                        <i class="bi bi-lock-fill me-1"></i>Private
                      </span>
                      <span v-else class="pill-badge public">
-                        <i class="bi bi-globe me-1"></i>Public Note
+                        <i class="bi bi-globe me-1"></i>Public
                      </span>
                   </div>
 
-                  <h1 class="article-title mb-3 text-color">{{ note.title }}</h1>
+                  <button class="btn btn-sm btn-outline-secondary btn-action-pill" @click="copyShareLink"
+                     title="Share Note">
+                     <i :class="copyStatus === 'Copied!' ? 'bi bi-check-lg text-success' : 'bi bi-share'"></i>
+                     <span class="d-none d-sm-inline ms-1">{{ copyStatus }}</span>
+                  </button>
+               </div>
 
-                  <div class="d-flex align-items-center gap-3 fs-xs text-muted flex-wrap">
+               <div class="p-3 p-md-4">
+                  <h1 class="article-title mb-2 text-color">{{ note.title }}</h1>
+
+                  <div class="d-flex align-items-center gap-2 fs-xs text-muted flex-wrap mb-3 pb-3 border-bottom">
                      <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
                      <span>•</span>
                      <span><i class="bi bi-clock me-1 opacity-75"></i>{{ readingTime }} min read</span>
                      <span>•</span>
                      <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
                   </div>
-               </header>
 
-               <div class="markdown-body" v-html="html"></div>
+                  <div class="markdown-body" v-html="html"></div>
+               </div>
             </article>
          </div>
       </div>
@@ -91,7 +85,7 @@ const { $api } = useNuxtApp()
 const note = ref<any>({})
 const pending = ref(true)
 const error = ref('')
-const copyStatus = ref('Share Link')
+const copyStatus = ref('Share')
 
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
 const html = computed(() => md.render(note.value.content || ''))
@@ -138,7 +132,7 @@ const copyShareLink = async () => {
    try {
       await navigator.clipboard.writeText(window.location.href)
       copyStatus.value = 'Copied!'
-      setTimeout(() => { copyStatus.value = 'Share Link' }, 2000)
+      setTimeout(() => { copyStatus.value = 'Share' }, 2000)
    } catch { }
 }
 
@@ -146,7 +140,7 @@ const formatDate = (v: number | string) => {
    if (!v) return '-'
    return new Date(v).toLocaleDateString(undefined, {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric'
    })
 }
@@ -165,7 +159,7 @@ onMounted(async () => {
 
 <style scoped>
 .fs-xs {
-   font-size: 0.75rem;
+   font-size: 0.725rem;
 }
 
 .text-color {
@@ -181,7 +175,7 @@ onMounted(async () => {
 }
 
 .reader-max-width {
-   max-width: 820px;
+   max-width: 780px;
 }
 
 .border-bottom {
@@ -195,17 +189,29 @@ onMounted(async () => {
    overflow: hidden;
 }
 
+.card-header-bar {
+   background-color: var(--app-bg);
+}
+
+.btn-action-pill {
+   font-size: 0.75rem;
+   padding: 0.25rem 0.6rem;
+   border-radius: 0.375rem;
+   display: inline-flex;
+   align-items: center;
+}
+
 .article-title {
-   font-size: 1.85rem;
+   font-size: 1.5rem;
    font-weight: 700;
    line-height: 1.3;
-   letter-spacing: -0.02em;
+   letter-spacing: -0.01em;
 }
 
 .pill-badge {
    display: inline-flex;
    align-items: center;
-   font-size: 0.675rem;
+   font-size: 0.65rem;
    font-weight: 600;
    padding: 0.2rem 0.5rem;
    border-radius: 0.25rem;
@@ -224,8 +230,8 @@ onMounted(async () => {
 }
 
 .error-icon-circle {
-   width: 50px;
-   height: 50px;
+   width: 46px;
+   height: 46px;
    margin: 0 auto;
    border-radius: 50%;
    background-color: rgba(220, 53, 69, 0.1);
@@ -233,10 +239,11 @@ onMounted(async () => {
    display: flex;
    align-items: center;
    justify-content: center;
-   font-size: 1.5rem;
+   font-size: 1.3rem;
    color: #dc3545;
 }
 
+.skeleton-btn,
 .skeleton-pill,
 .skeleton-title,
 .skeleton-meta,
@@ -251,27 +258,32 @@ onMounted(async () => {
    border-radius: 0.375rem;
 }
 
-.skeleton-pill {
-   width: 90px;
-   height: 22px;
-}
-
-.skeleton-title {
+.skeleton-btn {
+   width: 60px;
    height: 28px;
 }
 
+.skeleton-pill {
+   width: 70px;
+   height: 20px;
+}
+
+.skeleton-title {
+   height: 24px;
+}
+
 .skeleton-meta {
-   width: 180px;
-   height: 16px;
+   width: 160px;
+   height: 14px;
 }
 
 .skeleton-line {
-   height: 16px;
+   height: 14px;
 }
 
 .skeleton-image {
    width: 100%;
-   height: 220px;
+   height: 180px;
    border-radius: 0.5rem;
 }
 
@@ -287,8 +299,8 @@ onMounted(async () => {
 
 .markdown-body {
    color: var(--app-text-color);
-   line-height: 1.8;
-   font-size: 1rem;
+   line-height: 1.7;
+   font-size: 0.925rem;
 }
 
 .markdown-body :deep(h1),
@@ -299,13 +311,13 @@ onMounted(async () => {
 .markdown-body :deep(h6) {
    color: var(--app-text-color);
    font-weight: 700;
-   margin-top: 1.75rem;
-   margin-bottom: 0.85rem;
+   margin-top: 1.4rem;
+   margin-bottom: 0.75rem;
    line-height: 1.3;
 }
 
 .markdown-body :deep(p) {
-   margin-bottom: 1.2rem;
+   margin-bottom: 1rem;
 }
 
 .markdown-body :deep(a) {
@@ -317,7 +329,7 @@ onMounted(async () => {
 .markdown-body :deep(code) {
    background-color: var(--app-bg);
    color: var(--app-accent-color);
-   padding: 0.2rem 0.45rem;
+   padding: 0.15rem 0.35rem;
    border-radius: 0.25rem;
    font-size: 0.85em;
    border: 1px solid var(--app-border-color);
@@ -326,11 +338,11 @@ onMounted(async () => {
 .markdown-body :deep(pre) {
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
-   padding: 1.25rem;
+   padding: 1rem;
    border-radius: 0.5rem;
    overflow-x: auto;
-   margin-top: 1.25rem;
-   margin-bottom: 1.25rem;
+   margin-top: 1rem;
+   margin-bottom: 1rem;
 }
 
 .markdown-body :deep(pre code) {
@@ -342,10 +354,10 @@ onMounted(async () => {
 
 .markdown-body :deep(blockquote) {
    border-left: 3px solid var(--app-accent-color);
-   padding-left: 1.25rem;
+   padding-left: 1rem;
    margin-left: 0;
-   margin-top: 1.25rem;
-   margin-bottom: 1.25rem;
+   margin-top: 1rem;
+   margin-bottom: 1rem;
    color: var(--app-secondary-text-color);
    font-style: italic;
 }
@@ -355,21 +367,21 @@ onMounted(async () => {
    height: auto;
    border-radius: 0.5rem;
    border: 1px solid var(--app-border-color);
-   margin-top: 1rem;
-   margin-bottom: 1rem;
+   margin-top: 0.75rem;
+   margin-bottom: 0.75rem;
 }
 
 .markdown-body :deep(table) {
    width: 100%;
    border-collapse: collapse;
-   margin-top: 1.25rem;
-   margin-bottom: 1.25rem;
+   margin-top: 1rem;
+   margin-bottom: 1rem;
 }
 
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
    border: 1px solid var(--app-border-color);
-   padding: 0.6rem 0.85rem;
+   padding: 0.5rem 0.75rem;
 }
 
 .markdown-body :deep(th) {
