@@ -33,7 +33,7 @@
                <div class="admin-icon-badge"><i class="bi bi-person-badge-fill"></i></div>
                <div>
                   <h5 class="mb-0 fw-bold text-color">Admin Workspace</h5>
-                  <p class="text-muted mb-0 fs-xs">Create, edit, and publish markdown notes</p>
+                  <p class="text-muted mb-0 fs-xs">Create, edit, and publish notes</p>
                </div>
             </div>
             <button class="btn btn-outline-secondary d-flex align-items-center gap-1" @click="logout">
@@ -49,7 +49,8 @@
                         <div class="editor-badge"><i class="bi bi-pencil-square"></i></div>
                         <div>
                            <h6 class="editor-title mb-0">{{ form.id ? 'Edit Note' : 'Create New Note' }}</h6>
-                           <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write markdown content' }}</span>
+                           <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write content'
+                              }}</span>
                         </div>
                      </div>
                      <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
@@ -63,37 +64,49 @@
                            <label
                               class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Title</label>
                            <input v-model="form.title" class="form-control" placeholder="Enter note title..." required
-                              :disabled="loading">
+                              :disabled="loading || isUploadingPhoto">
                         </div>
 
                         <div class="mb-3">
                            <div class="d-flex justify-content-between align-items-center mb-2">
                               <label
-                                 class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Markdown
-                                 Content</label>
+                                 class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Content</label>
                               <div class="toolbar d-flex align-items-center gap-1">
                                  <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')"
-                                    title="Bold"><i class="bi bi-type-bold"></i></button>
+                                    title="Bold" :disabled="loading || isUploadingPhoto"><i
+                                       class="bi bi-type-bold"></i></button>
                                  <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')"
-                                    title="Italic"><i class="bi bi-type-italic"></i></button>
+                                    title="Italic" :disabled="loading || isUploadingPhoto"><i
+                                       class="bi bi-type-italic"></i></button>
                                  <button type="button" class="btn btn-xs btn-outline-secondary" @click="insert('\n- ')"
-                                    title="List"><i class="bi bi-list-ul"></i></button>
+                                    title="List" :disabled="loading || isUploadingPhoto"><i
+                                       class="bi bi-list-ul"></i></button>
                                  <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')"
-                                    title="Code"><i class="bi bi-code"></i></button>
+                                    title="Code" :disabled="loading || isUploadingPhoto"><i
+                                       class="bi bi-code"></i></button>
                                  <button type="button" class="btn btn-xs btn-outline-secondary"
-                                    @click="imageInput?.click()" title="Upload Photo"><i class="bi bi-image"></i>
-                                    Photo</button>
+                                    @click="imageInput?.click()" title="Upload Photo"
+                                    :disabled="loading || isUploadingPhoto"><i class="bi bi-image"></i> Photo</button>
                                  <input ref="imageInput" type="file" class="d-none" accept="image/*"
-                                    @change="uploadPhoto">
+                                    @change="uploadPhoto" :disabled="isUploadingPhoto">
                               </div>
                            </div>
-                           <textarea ref="editor" v-model="form.content" class="form-control note-textarea" rows="11"
-                              placeholder="Write markdown content here..." required :disabled="loading"></textarea>
+
+                           <div class="textarea-wrapper position-relative">
+                              <textarea ref="editor" v-model="form.content" class="form-control note-textarea" rows="11"
+                                 placeholder="Write content here..." required
+                                 :disabled="loading || isUploadingPhoto"></textarea>
+                              <div v-if="isUploadingPhoto"
+                                 class="upload-overlay d-flex flex-column align-items-center justify-content-center">
+                                 <div class="spinner-border spinner-border-sm text-accent mb-2" role="status"></div>
+                                 <span class="fs-xs fw-semibold text-color">Uploading photo...</span>
+                              </div>
+                           </div>
                         </div>
 
                         <div class="form-check form-switch mb-4">
                            <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox"
-                              :disabled="loading">
+                              :disabled="loading || isUploadingPhoto">
                            <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private note
                               (admin visible only)</label>
                         </div>
@@ -101,7 +114,7 @@
                         <div class="d-flex gap-2">
                            <button
                               class="btn btn-custom-accent py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2"
-                              :disabled="loading">
+                              :disabled="loading || isUploadingPhoto">
                               <span v-if="loading" class="spinner-border spinner-border-sm"></span>
                               <i v-else class="bi bi-check-circle-fill"></i>
                               <span>{{ form.id ? 'Update Article' : 'Publish Article' }}</span>
@@ -131,6 +144,7 @@ import NotesManagement from '@/components/NotesManagement.vue'
 const { $api } = useNuxtApp()
 const isAdmin = ref(false)
 const loading = ref(false)
+const isUploadingPhoto = ref(false)
 const error = ref('')
 
 const digits = ref(['', '', '', '', '', ''])
@@ -281,10 +295,18 @@ const wrap = (a: string, b: string) => {
 const uploadPhoto = async (ev: Event) => {
    const file = (ev.target as HTMLInputElement).files?.[0]
    if (!file) return
-   const fd = new FormData()
-   fd.append('file', file)
-   const r: any = await $fetch('/api/upload', { method: 'POST', body: fd })
-   insert(`\n![${file.name}](${r.data.url})\n`)
+   isUploadingPhoto.value = true
+   try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const r: any = await $fetch('/api/upload', { method: 'POST', body: fd })
+      insert(`\n![${file.name}](${r.data.url})\n`)
+   } catch (e: any) {
+      error.value = e.message || 'Photo upload failed'
+   } finally {
+      isUploadingPhoto.value = false
+      if (imageInput.value) imageInput.value.value = ''
+   }
 }
 
 onMounted(check)
@@ -310,6 +332,10 @@ onMounted(check)
 
 .text-color {
    color: var(--app-text-color) !important;
+}
+
+.text-accent {
+   color: var(--app-accent-color) !important;
 }
 
 .text-muted {
@@ -353,8 +379,24 @@ onMounted(check)
 }
 
 .note-textarea {
-   font-family: monospace;
+   font-family: inherit;
    resize: vertical;
+}
+
+.textarea-wrapper {
+   position: relative;
+}
+
+.upload-overlay {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   background-color: var(--dark-overlay-bg, rgba(28, 28, 30, 0.75));
+   border-radius: 0.375rem;
+   backdrop-filter: blur(2px);
+   z-index: 10;
 }
 
 .pin-form-card {
