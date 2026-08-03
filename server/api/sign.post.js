@@ -28,7 +28,10 @@ export default defineEventHandler(async (event) => {
       const token = generateToken(20)
       const expiryMinutes = parseInt(env.CDN_EXPIRY_MINUTES || '15', 10)
       const maxBytes = (parseInt(env.CDN_MAX_SIZE_MB || '500', 10)) * 1024 * 1024
-      const expiredAt = Date.now() + (expiryMinutes * 60 * 1000)
+
+      // === PERBAIKAN TIMESTAMP (Gunakan Detik) ===
+      const nowInSeconds = Math.floor(Date.now() / 1000)
+      const expiredAt = nowInSeconds + (expiryMinutes * 60)
 
       await createSignedCdn(db, {
          token,
@@ -36,6 +39,7 @@ export default defineEventHandler(async (event) => {
          filename,
          customHeaders: headers,
          maxBytes,
+         createdAt: nowInSeconds, // pastikan created_at juga disimpan dalam detik
          expiredAt
       })
 
@@ -48,7 +52,7 @@ export default defineEventHandler(async (event) => {
          data: {
             token,
             signed_url: signedLink,
-            expires_at: new Date(expiredAt).toISOString(),
+            expires_at: new Date(expiredAt * 1000).toISOString(), // Kali 1000 saat convert ke ISO String
             max_size_mb: parseInt(env.CDN_MAX_SIZE_MB || '500', 10)
          }
       }
