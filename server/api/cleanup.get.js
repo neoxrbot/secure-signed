@@ -1,4 +1,4 @@
-import { cleanDatabase } from '../../utils/database.js'
+import { cleanDatabase } from '../utils/database.js'
 
 export default defineEventHandler(async (event) => {
    const query = getQuery(event)
