@@ -1,7 +1,7 @@
-import { getCloudflareEnv } from '../../utils/cloudflare.js'
-import { getWebRequest } from '../../utils/web-request.js'
-import { createSignedCdn } from '../../utils/database.js'
-import appConfig from '../../utils/app-config.js'
+import { getCloudflareEnv } from '../utils/cloudflare.js'
+import { getWebRequest } from '../utils/web-request.js'
+import { createSignedCdn } from '../utils/database.js'
+import appConfig from '../utils/app-config.js'
 
 function generateToken(length = 20) {
    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
