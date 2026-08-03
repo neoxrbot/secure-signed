@@ -73,22 +73,32 @@
    </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import MarkdownIt from '@/utils/markdown-it'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter, useNuxtApp, useHead } from '#app'
+
+import Prism from 'prismjs'
+import 'prismjs/themes/prism-tomorrow.css'
 
 const route = useRoute()
 const router = useRouter()
 const { $api } = useNuxtApp()
 
-const note = ref<any>({})
+const note = ref({})
 const pending = ref(true)
 const error = ref('')
 const copyStatus = ref('Share')
 
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
 const html = computed(() => md.render(note.value.content || ''))
+
+watch(html, async () => {
+   await nextTick()
+   if (typeof window !== 'undefined') {
+      Prism.highlightAll()
+   }
+})
 
 const readingTime = computed(() => {
    const words = (note.value.content || '').trim().split(/\s+/).length
@@ -101,7 +111,7 @@ useHead({
 
 const playClickSound = () => {
    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+      const AudioContext = window.AudioContext || window.webkitAudioContext
       if (!AudioContext) return
       const ctx = new AudioContext()
       const osc = ctx.createOscillator()
@@ -136,9 +146,15 @@ const copyShareLink = async () => {
    } catch { }
 }
 
-const formatDate = (v: number | string) => {
+const formatDate = (v) => {
    if (!v) return '-'
-   return new Date(v).toLocaleDateString(undefined, {
+   let val = typeof v === 'string' && !isNaN(Number(v)) ? Number(v) : v
+   if (typeof val === 'number' && val < 1e11) {
+      val = val * 1000
+   }
+   const d = new Date(val)
+   if (isNaN(d.getTime())) return '-'
+   return d.toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -149,7 +165,11 @@ onMounted(async () => {
    try {
       const r = await $api(`/api/notes/${route.params.id}`)
       note.value = r.data
-   } catch (e: any) {
+      await nextTick()
+      if (typeof window !== 'undefined') {
+         Prism.highlightAll()
+      }
+   } catch (e) {
       error.value = e.data?.message || 'Note not found or private'
    } finally {
       pending.value = false
@@ -299,7 +319,7 @@ onMounted(async () => {
 
 .markdown-body {
    color: var(--app-text-color);
-   line-height: 1.7;
+   line-height: 1.6;
    font-size: 0.925rem;
 }
 
@@ -311,13 +331,13 @@ onMounted(async () => {
 .markdown-body :deep(h6) {
    color: var(--app-text-color);
    font-weight: 700;
-   margin-top: 1.4rem;
-   margin-bottom: 0.75rem;
+   margin-top: 1.1rem;
+   margin-bottom: 0.4rem;
    line-height: 1.3;
 }
 
 .markdown-body :deep(p) {
-   margin-bottom: 1rem;
+   margin-bottom: 0.5rem;
 }
 
 .markdown-body :deep(a) {
@@ -338,11 +358,11 @@ onMounted(async () => {
 .markdown-body :deep(pre) {
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
-   padding: 1rem;
+   padding: 0.75rem 1rem;
    border-radius: 0.5rem;
    overflow-x: auto;
-   margin-top: 1rem;
-   margin-bottom: 1rem;
+   margin-top: 0.6rem;
+   margin-bottom: 0.6rem;
 }
 
 .markdown-body :deep(pre code) {
@@ -352,12 +372,27 @@ onMounted(async () => {
    color: inherit;
 }
 
+.markdown-body :deep(pre[class*="language-"]) {
+   background-color: var(--app-bg) !important;
+   border: 1px solid var(--app-border-color) !important;
+   border-radius: 0.5rem !important;
+   margin-top: 0.6rem !important;
+   margin-bottom: 0.6rem !important;
+   padding: 0.75rem 1rem !important;
+}
+
+.markdown-body :deep(code[class*="language-"]) {
+   text-shadow: none !important;
+   font-family: 'Fira Code', Consolas, Monaco, monospace;
+   font-size: 0.85em;
+}
+
 .markdown-body :deep(blockquote) {
    border-left: 3px solid var(--app-accent-color);
-   padding-left: 1rem;
+   padding-left: 0.85rem;
    margin-left: 0;
-   margin-top: 1rem;
-   margin-bottom: 1rem;
+   margin-top: 0.6rem;
+   margin-bottom: 0.6rem;
    color: var(--app-secondary-text-color);
    font-style: italic;
 }
@@ -367,21 +402,21 @@ onMounted(async () => {
    height: auto;
    border-radius: 0.5rem;
    border: 1px solid var(--app-border-color);
-   margin-top: 0.75rem;
-   margin-bottom: 0.75rem;
+   margin-top: 0.5rem;
+   margin-bottom: 0.5rem;
 }
 
 .markdown-body :deep(table) {
    width: 100%;
    border-collapse: collapse;
-   margin-top: 1rem;
-   margin-bottom: 1rem;
+   margin-top: 0.6rem;
+   margin-bottom: 0.6rem;
 }
 
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
    border: 1px solid var(--app-border-color);
-   padding: 0.5rem 0.75rem;
+   padding: 0.4rem 0.65rem;
 }
 
 .markdown-body :deep(th) {
