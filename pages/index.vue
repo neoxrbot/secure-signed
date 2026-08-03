@@ -91,10 +91,6 @@ import 'prismjs/components/prism-javascript'
 import 'prismjs/components/prism-python'
 import 'prismjs/components/prism-bash'
 
-useHead({
-   title: 'Introduce - Developer Utility Engine'
-})
-
 const router = useRouter()
 const activeLang = ref('curl')
 const copyStatus = ref('Copy Code')
@@ -103,8 +99,8 @@ const copyStatus = ref('Copy Code')
 const { origin } = useRequestURL()
 
 const codeExamples = computed(() => ({
-   curl: `curl -X POST "${origin}/api/upload" \\\n  -F "files=@file1.jpg" \\\n  -F "files=@file2.pdf"`,
-   javascript: `const formData = new FormData()\nformData.append('files', fileInput.files[0])\n\nconst response = await fetch('/api/upload', {\n  method: 'POST',\n  body: formData\n})\nconst result = await response.json()`,
+   curl: `curl -X POST "${origin}/api/upload" \\\n  -F "file=@file1.jpg" \\\n  -F "file=@file2.pdf"`,
+   javascript: `const formData = new FormData()\nformData.append('file', fileInput.files[0])\n\nconst response = await fetch('/api/upload', {\n  method: 'POST',\n  body: formData\n})\nconst result = await response.json()`,
    python: `import requests\n\nfiles = [('files', open('document.pdf', 'rb'))]\nresponse = requests.post('${origin}/api/upload', files=files)\nprint(response.json())`
 }))
 
