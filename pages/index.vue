@@ -14,7 +14,7 @@
                <span>Services</span>
             </button>
             <button class="panel-btn d-flex align-items-center gap-2" @click="navigateTo('/docs')">
-               <i class="bi bi-terminal"></i>
+               <i class="bi bi-book"></i>
                <span>Documentation</span>
             </button>
          </div>
