@@ -222,7 +222,7 @@ const uploadPhoto = async (ev: Event) => {
       const fd = new FormData()
       fd.append('file', file)
       const r: any = await $fetch('/api/upload', { method: 'POST', body: fd })
-      insert(`\n![${file.name}](${r.data.url})\n`)
+      insert(`\n![${file.name}](${r.data.url.replace(/^https?:\/\/[^\/]+/, '')})\n`)
    } catch (e: any) {
       error.value = e.message || 'Photo upload failed'
    } finally {
