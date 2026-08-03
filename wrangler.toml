@@ -14,3 +14,6 @@ ADMIN_PIN = "221100"
 binding = "DB"
 database_name = "secure_signed"
 database_id = "4c300c60-53f6-4700-a182-397e83580fc3"
+
+[triggers]
+crons = ["0 0 * * *"]

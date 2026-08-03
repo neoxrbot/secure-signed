@@ -18,6 +18,12 @@ export default defineNuxtConfig({
    ssr: false,
    nitro: {
       preset: 'cloudflare-pages',
+      experimental: {
+         tasks: true
+      },
+      scheduledTasks: {
+         '0 0 * * *': ['db:cleanup']
+      }
       // devProxy: {
       //    '/api': {
       //       target: 'https://secure-signed.pages.dev',

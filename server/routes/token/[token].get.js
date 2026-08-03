@@ -1,6 +1,6 @@
 // server/routes/token/[token].get.js
 import { getCloudflareEnv } from '../../utils/cloudflare.js'
-import { getSignedCdn, recordCdnDownload } from '../../utils/database.js'
+import { getSignedCdn, recordCdnDownload, cleanExpiredCdn } from '../../utils/database.js'
 
 function isDomainAllowed(domain, allowedPatternsStr) {
    if (!allowedPatternsStr) return true
@@ -34,7 +34,13 @@ export default defineEventHandler(async (event) => {
       const record = await getSignedCdn(db, token)
       if (!record) return new Response('Invalid or unknown CDN token', { status: 404 })
 
-      if (Date.now() > record.expired_at) {
+      // === PERBAIKAN TIMESTAMP (Detik) ===
+      const nowInSeconds = Math.floor(Date.now() / 1000)
+      const expiredAt = record.expired_at > 1e11 ? Math.floor(record.expired_at / 1000) : record.expired_at
+
+      if (nowInSeconds > expiredAt) {
+         // Hapus token expired secara otomatis di background
+         event.waitUntil(cleanExpiredCdn(db))
          return new Response('CDN link has expired', { status: 410 })
       }
 

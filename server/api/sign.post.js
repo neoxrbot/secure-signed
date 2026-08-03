@@ -1,10 +1,9 @@
-// server/api/cdn/sign.post.js
-import { getCloudflareEnv } from '../utils/cloudflare.js'
-import { getWebRequest } from '../utils/web-request.js'
-import { createSignedCdn } from '../utils/database.js'
-import appConfig from '../utils/app-config.js'
+import { getCloudflareEnv } from '../../utils/cloudflare.js'
+import { getWebRequest } from '../../utils/web-request.js'
+import { createSignedCdn } from '../../utils/database.js'
+import appConfig from '../../utils/app-config.js'
 
-function generateToken(length = 16) {
+function generateToken(length = 20) {
    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
    let res = ''
    for (let i = 0; i < length; i++) res += chars.charAt(Math.floor(Math.random() * chars.length))
@@ -29,7 +28,6 @@ export default defineEventHandler(async (event) => {
       const expiryMinutes = parseInt(env.CDN_EXPIRY_MINUTES || '15', 10)
       const maxBytes = (parseInt(env.CDN_MAX_SIZE_MB || '500', 10)) * 1024 * 1024
 
-      // === PERBAIKAN TIMESTAMP (Gunakan Detik) ===
       const nowInSeconds = Math.floor(Date.now() / 1000)
       const expiredAt = nowInSeconds + (expiryMinutes * 60)
 
@@ -39,7 +37,6 @@ export default defineEventHandler(async (event) => {
          filename,
          customHeaders: headers,
          maxBytes,
-         createdAt: nowInSeconds, // pastikan created_at juga disimpan dalam detik
          expiredAt
       })
 
@@ -52,7 +49,7 @@ export default defineEventHandler(async (event) => {
          data: {
             token,
             signed_url: signedLink,
-            expires_at: new Date(expiredAt * 1000).toISOString(), // Kali 1000 saat convert ke ISO String
+            expires_at: new Date(expiredAt * 1000).toISOString(),
             max_size_mb: parseInt(env.CDN_MAX_SIZE_MB || '500', 10)
          }
       }

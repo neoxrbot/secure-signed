@@ -1,7 +1,7 @@
 // server/api/short.post.js
 import { getCloudflareEnv } from '../utils/cloudflare.js'
 import { getWebRequest } from '../utils/web-request.js'
-import { createShortUrl } from '../utils/database.js'
+import { createShortUrl, cleanOldUrls } from '../utils/database.js'
 import appConfig from '../utils/app-config.js'
 
 function generateShortId(length = 6) {
@@ -9,6 +9,15 @@ function generateShortId(length = 6) {
    let res = ''
    for (let i = 0; i < length; i++) res += chars.charAt(Math.floor(Math.random() * chars.length))
    return res
+}
+
+function isValidUrl(string) {
+   try {
+      const parsed = new URL(string)
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+   } catch {
+      return false
+   }
 }
 
 export default defineEventHandler(async (event) => {
@@ -25,8 +34,17 @@ export default defineEventHandler(async (event) => {
          return new Response(JSON.stringify({ status: false, msg: 'URL parameter is required' }), { status: 400 })
       }
 
+      if (!isValidUrl(originalUrl)) {
+         return new Response(JSON.stringify({ status: false, msg: 'Invalid URL format (must start with http:// or https://)' }), { status: 400 })
+      }
+
       const shortId = generateShortId(6)
       await createShortUrl(db, shortId, originalUrl)
+
+      // Hapus URL usang (> 30 hari) di latar belakang secara otomatis
+      if (event.context.cloudflare?.context) {
+         event.context.cloudflare.context.waitUntil(cleanOldUrls(db, 30))
+      }
 
       return {
          creator: appConfig.watermark.creator,

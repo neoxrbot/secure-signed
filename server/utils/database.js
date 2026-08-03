@@ -1,8 +1,3 @@
-// server/utils/database.js
-
-/**
- * Catat statistik global (hits total, daily hits, total files, total download, dll)
- */
 export async function recordHit(db, extraStats = {}) {
    const today = new Date().toISOString().split('T')[0]
    const query = `
@@ -23,9 +18,6 @@ export async function recordHit(db, extraStats = {}) {
    return db.batch(batch)
 }
 
-/**
- * Ambil semua data statistik global
- */
 export async function getGlobalStats(db) {
    const today = new Date().toISOString().split('T')[0]
    const { results } = await db.prepare(
@@ -56,11 +48,12 @@ export async function getGlobalStats(db) {
    }
 }
 
-// --- URL SHORTENER ---
 export async function createShortUrl(db, id, url) {
+   const createdAt = Math.floor(Date.now() / 1000)
+
    await db.prepare(
       'INSERT INTO urls (id, url, views, created_at) VALUES (?1, ?2, 0, ?3)'
-   ).bind(id, url, Date.now()).run()
+   ).bind(id, url, createdAt).run()
 
    await recordHit(db, { 'stats:total_shorts': 1 })
 }
@@ -74,8 +67,10 @@ export async function incrementShortUrlView(db, id) {
    await recordHit(db, { 'stats:total_views': 1 })
 }
 
-// --- SIGNED PROXY CDN ---
 export async function createSignedCdn(db, { token, targetUrl, filename, customHeaders, maxBytes, expiredAt }) {
+   const now = Math.floor(Date.now() / 1000)
+   const exp = expiredAt > 1e11 ? Math.floor(expiredAt / 1000) : expiredAt
+
    await db.prepare(
       `INSERT INTO signed_cdn (token, target_url, filename, custom_headers, max_bytes, created_at, expired_at) 
      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`
@@ -85,8 +80,8 @@ export async function createSignedCdn(db, { token, targetUrl, filename, customHe
       filename || '',
       customHeaders ? JSON.stringify(customHeaders) : '',
       maxBytes,
-      Date.now(),
-      expiredAt
+      now,
+      exp
    ).run()
 }
 
@@ -104,9 +99,29 @@ export async function recordCdnDownload(db, token, bytes) {
       'stats:total_download_size': bytes || 0
    })
 }
-// --- ADMIN NOTES ---
+
+export async function cleanExpiredCdn(db) {
+   const now = Math.floor(Date.now() / 1000)
+   return db.prepare('DELETE FROM signed_cdn WHERE expired_at <= ?1').bind(now).run()
+}
+
+export async function cleanOldUrls(db, retentionDays = 30) {
+   const cutoffTime = Math.floor(Date.now() / 1000) - (retentionDays * 86400)
+   return db.prepare('DELETE FROM urls WHERE created_at <= ?1').bind(cutoffTime).run()
+}
+
+export async function cleanDatabase(db, urlRetentionDays = 30) {
+   const cdnRes = await cleanExpiredCdn(db)
+   const urlRes = await cleanOldUrls(db, urlRetentionDays)
+
+   return {
+      deletedCdn: cdnRes.meta?.changes || 0,
+      deletedUrls: urlRes.meta?.changes || 0
+   }
+}
+
 export async function createNote(db, { id, title, content, isPrivate }) {
-   const now = Date.now()
+   const now = Math.floor(Date.now() / 1000)
    await db.prepare(
       'INSERT INTO notes (id, title, content, is_private, reads, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?5)'
    ).bind(id, title, content, isPrivate ? 1 : 0, now).run()
@@ -134,9 +149,10 @@ export async function getNoteById(db, id) {
 }
 
 export async function updateNote(db, id, { title, content, isPrivate }) {
+   const now = Math.floor(Date.now() / 1000)
    await db.prepare(
       'UPDATE notes SET title = ?1, content = ?2, is_private = ?3, updated_at = ?4 WHERE id = ?5'
-   ).bind(title, content, isPrivate ? 1 : 0, Date.now(), id).run()
+   ).bind(title, content, isPrivate ? 1 : 0, now, id).run()
    return getNoteById(db, id)
 }
 
