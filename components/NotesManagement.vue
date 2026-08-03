@@ -144,7 +144,13 @@ const displayNotes = computed(() => {
 
 const formatDate = (v: number | string) => {
    if (!v) return '-'
-   return new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+   let val = typeof v === 'string' && !isNaN(Number(v)) ? Number(v) : v
+   if (typeof val === 'number' && val < 1e11) {
+      val = val * 1000
+   }
+   const d = new Date(val)
+   if (isNaN(d.getTime())) return '-'
+   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 </script>
 
