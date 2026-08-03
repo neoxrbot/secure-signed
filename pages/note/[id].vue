@@ -91,7 +91,16 @@ const error = ref('')
 const copyStatus = ref('Share')
 
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
-const html = computed(() => md.render(note.value.content || ''))
+
+const cleanContent = computed(() => {
+   let text = note.value.content || ''
+
+   text = text.replace(/[\u2010-\u2015\u2212]/g, '-')
+
+   return text.replace(/(?:\r?\n|^)\s*---+\s*(?=\r?\n|$)/g, '\n\n---\n\n')
+})
+
+const html = computed(() => md.render(cleanContent.value))
 
 watch(html, async () => {
    await nextTick()
