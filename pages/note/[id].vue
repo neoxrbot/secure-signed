@@ -345,10 +345,38 @@ onMounted(async () => {
    line-height: 1.3;
 }
 
+.markdown-body :deep(hr) {
+   height: 1px;
+   padding: 0;
+   margin: 0.75rem 0 !important;
+   background-color: var(--app-border-color);
+   border: none;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+   padding-left: 1.25rem;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.35rem !important;
+}
+
+.markdown-body :deep(li) {
+   margin-bottom: 0.15rem;
+}
+
+.markdown-body :deep(li input[type="checkbox"]) {
+   margin-right: 0.35rem;
+}
+
 .markdown-body :deep(a) {
    color: var(--app-accent-color);
    text-decoration: underline;
    text-underline-offset: 3px;
+}
+
+.markdown-body :deep(del),
+.markdown-body :deep(s) {
+   color: var(--app-secondary-text-color);
 }
 
 .markdown-body :deep(code) {
