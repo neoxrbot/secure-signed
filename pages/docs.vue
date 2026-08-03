@@ -119,11 +119,10 @@ const endpointsData = ref([
       path: '/api/upload',
       description: 'Uploads one or more files and returns shareable file URLs. The request must be sent as multipart/form-data.',
       parameters: [
-         { name: 'files', type: 'File[]', required: true, description: 'One or more files to be uploaded.' }
+         { name: 'file', type: 'File', required: true, description: 'File to be uploaded.' }
       ],
       curlTemplate: `curl -X POST "__BASE_URL__/api/upload" \\
-  -F "files=@/path/to/first-file.jpg" \\
-  -F "files=@/path/to/second-file.png"`
+  -F "file=@/path/to/first-file.jpg"`
    },
    {
       id: 'api-short',
