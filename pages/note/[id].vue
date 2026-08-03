@@ -319,8 +319,17 @@ onMounted(async () => {
 
 .markdown-body {
    color: var(--app-text-color);
-   line-height: 1.6;
+   line-height: 1.5;
    font-size: 0.925rem;
+}
+
+.markdown-body :deep(p) {
+   margin-top: 0 !important;
+   margin-bottom: 0.35rem !important;
+}
+
+.markdown-body :deep(p:last-child) {
+   margin-bottom: 0 !important;
 }
 
 .markdown-body :deep(h1),
@@ -331,13 +340,9 @@ onMounted(async () => {
 .markdown-body :deep(h6) {
    color: var(--app-text-color);
    font-weight: 700;
-   margin-top: 1.1rem;
-   margin-bottom: 0.4rem;
+   margin-top: 0.75rem !important;
+   margin-bottom: 0.25rem !important;
    line-height: 1.3;
-}
-
-.markdown-body :deep(p) {
-   margin-bottom: 0.5rem;
 }
 
 .markdown-body :deep(a) {
@@ -402,8 +407,8 @@ onMounted(async () => {
    height: auto;
    border-radius: 0.5rem;
    border: 1px solid var(--app-border-color);
-   margin-top: 0.5rem;
-   margin-bottom: 0.5rem;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.25rem !important;
 }
 
 .markdown-body :deep(table) {
