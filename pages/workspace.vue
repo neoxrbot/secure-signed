@@ -22,12 +22,19 @@
                      <div>
                         <h6 class="editor-title mb-0">{{ form.id ? 'Edit Note' : 'Create New Note' }}</h6>
                         <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write content'
-                        }}</span>
+                           }}</span>
                      </div>
                   </div>
-                  <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
-                     <i class="bi bi-x-circle me-1"></i> Cancel Edit
-                  </button>
+                  <div class="d-flex align-items-center gap-2">
+                     <div class="form-check form-switch mb-0 me-2">
+                        <input id="previewSwitch" v-model="isPreview" class="form-check-input" type="checkbox"
+                           :disabled="loading || isUploadingPhoto">
+                        <label class="form-check-label fs-xs text-color fw-semibold" for="previewSwitch">Preview</label>
+                     </div>
+                     <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
+                        <i class="bi bi-x-circle me-1"></i> Cancel Edit
+                     </button>
+                  </div>
                </div>
 
                <div class="p-4 flex-grow-1">
@@ -42,7 +49,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-2">
                            <label
                               class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Content</label>
-                           <div class="toolbar d-flex align-items-center gap-1">
+                           <div v-if="!isPreview" class="toolbar d-flex align-items-center gap-1">
                               <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')"
                                  title="Bold" :disabled="loading || isUploadingPhoto"><i
                                     class="bi bi-type-bold"></i></button>
@@ -64,8 +71,12 @@
                         </div>
 
                         <div class="textarea-wrapper position-relative">
-                           <textarea ref="editor" v-model="form.content" class="form-control note-textarea" rows="11"
-                              placeholder="Write content here..." required
+                           <div v-if="isPreview" class="preview-box p-3 border rounded overflow-auto">
+                              <div v-if="previewHtml" class="markdown-body" v-html="previewHtml"></div>
+                              <span v-else class="text-muted fs-xs italic">Nothing to preview...</span>
+                           </div>
+                           <textarea v-else ref="editor" v-model="form.content" class="form-control note-textarea"
+                              rows="11" placeholder="Write content here..." required
                               :disabled="loading || isUploadingPhoto"></textarea>
                            <div v-if="isUploadingPhoto"
                               class="upload-overlay d-flex flex-column align-items-center justify-content-center">
@@ -105,27 +116,50 @@
    </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted } from 'vue'
+<script setup>
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useNuxtApp, useRouter, useState, useHead } from '#app'
+import MarkdownIt from '@/utils/markdown-it'
+import Prism from 'prismjs'
+import 'prismjs/themes/prism-tomorrow.css'
 
 useHead({ title: 'Admin Workspace' })
 
 const { $api } = useNuxtApp()
 const router = useRouter()
-const isAdmin = useState<boolean>('admin-status', () => false)
+const isAdmin = useState('admin-status', () => false)
 
 const loading = ref(false)
 const isUploadingPhoto = ref(false)
+const isPreview = ref(false)
 const error = ref('')
 
-const notes = ref<any[]>([])
+const notes = ref([])
 const page = ref(1)
 const perPage = ref(10)
 const totalNotes = ref(0)
-const editor = ref<HTMLTextAreaElement | null>(null)
-const imageInput = ref<HTMLInputElement | null>(null)
-const form = ref<any>({ id: '', title: '', content: '', is_private: false })
+const editor = ref(null)
+const imageInput = ref(null)
+const form = ref({ id: '', title: '', content: '', is_private: false })
+
+const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
+
+const previewHtml = computed(() => {
+   let text = form.value.content || ''
+   if (!text.trim()) return ''
+   text = text.replace(/[\u2010-\u2015\u2212]/g, '-')
+   text = text.replace(/(?:\r?\n|^)\s*---+\s*(?=\r?\n|$)/g, '\n\n---\n\n')
+   return md.render(text)
+})
+
+watch([isPreview, previewHtml], async () => {
+   if (isPreview.value) {
+      await nextTick()
+      if (typeof window !== 'undefined') {
+         Prism.highlightAll()
+      }
+   }
+})
 
 const check = async () => {
    try {
@@ -163,12 +197,12 @@ const fetchNotes = async () => {
    }
 }
 
-const goToPage = async (target: number) => {
+const goToPage = async (target) => {
    page.value = Math.max(1, target)
    await fetchNotes()
 }
 
-const handlePerPageChange = async (newPerPage: number) => {
+const handlePerPageChange = async (newPerPage) => {
    perPage.value = newPerPage
    page.value = 1
    await fetchNotes()
@@ -188,11 +222,11 @@ const saveNote = async () => {
    }
 }
 
-const editNote = (n: any) => {
+const editNote = (n) => {
    form.value = { id: n.id, title: n.title, content: n.content, is_private: !!n.is_private }
 }
 
-const removeNote = async (id: string) => {
+const removeNote = async (id) => {
    if (!confirm('Delete this note?')) return
    await $api(`/api/notes/${id}`, { method: 'DELETE' })
    if (notes.value.length === 1 && page.value > 1) page.value--
@@ -201,29 +235,30 @@ const removeNote = async (id: string) => {
 
 const resetForm = () => {
    form.value = { id: '', title: '', content: '', is_private: false }
+   isPreview.value = false
 }
 
-const insert = (text: string) => {
+const insert = (text) => {
    form.value.content += text
 }
 
-const wrap = (a: string, b: string) => {
+const wrap = (a, b) => {
    const el = editor.value
    if (!el) return insert(a + b)
    const s = el.selectionStart, e = el.selectionEnd
    form.value.content = form.value.content.slice(0, s) + a + form.value.content.slice(s, e) + b + form.value.content.slice(e)
 }
 
-const uploadPhoto = async (ev: Event) => {
-   const file = (ev.target as HTMLInputElement).files?.[0]
+const uploadPhoto = async (ev) => {
+   const file = ev.target.files?.[0]
    if (!file) return
    isUploadingPhoto.value = true
    try {
       const fd = new FormData()
       fd.append('file', file)
-      const r: any = await $fetch('/api/upload', { method: 'POST', body: fd })
+      const r = await $fetch('/api/upload', { method: 'POST', body: fd })
       insert(`\n![${file.name}](${r.data.url.replace(/^https?:\/\/[^\/]+/, '')})\n`)
-   } catch (e: any) {
+   } catch (e) {
       error.value = e.message || 'Photo upload failed'
    } finally {
       isUploadingPhoto.value = false
@@ -309,6 +344,13 @@ onMounted(check)
    position: relative;
 }
 
+.preview-box {
+   background-color: var(--app-bg);
+   border-color: var(--app-border-color) !important;
+   min-height: 278px;
+   max-height: 500px;
+}
+
 .upload-overlay {
    position: absolute;
    top: 0;
@@ -319,5 +361,108 @@ onMounted(check)
    border-radius: 0.375rem;
    backdrop-filter: blur(2px);
    z-index: 10;
+}
+
+.markdown-body {
+   color: var(--app-text-color);
+   line-height: 1.5;
+   font-size: 0.925rem;
+}
+
+.markdown-body :deep(p) {
+   margin-top: 0 !important;
+   margin-bottom: 0.35rem !important;
+}
+
+.markdown-body :deep(p:last-child) {
+   margin-bottom: 0 !important;
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3),
+.markdown-body :deep(h4),
+.markdown-body :deep(h5),
+.markdown-body :deep(h6) {
+   color: var(--app-text-color);
+   font-weight: 700;
+   margin-top: 0.75rem !important;
+   margin-bottom: 0.25rem !important;
+   line-height: 1.3;
+}
+
+.markdown-body :deep(hr) {
+   height: 1px;
+   padding: 0;
+   margin: 0.75rem 0 !important;
+   background-color: var(--app-border-color);
+   border: none;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+   padding-left: 1.25rem;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.35rem !important;
+}
+
+.markdown-body :deep(li) {
+   margin-bottom: 0.15rem;
+}
+
+.markdown-body :deep(a) {
+   color: var(--app-accent-color);
+   text-decoration: underline;
+   text-underline-offset: 3px;
+}
+
+.markdown-body :deep(code) {
+   background-color: var(--app-bg);
+   color: var(--app-accent-color);
+   padding: 0.15rem 0.35rem;
+   border-radius: 0.25rem;
+   font-size: 0.85em;
+   border: 1px solid var(--app-border-color);
+}
+
+.markdown-body :deep(pre) {
+   background-color: var(--app-bg);
+   border: 1px solid var(--app-border-color);
+   padding: 0.75rem 1rem;
+   border-radius: 0.5rem;
+   overflow-x: auto;
+   margin-top: 0.6rem;
+   margin-bottom: 0.6rem;
+}
+
+.markdown-body :deep(pre code) {
+   background: transparent;
+   padding: 0;
+   border: none;
+   color: inherit;
+}
+
+.markdown-body :deep(pre[class*="language-"]) {
+   background-color: var(--app-bg) !important;
+   border: 1px solid var(--app-border-color) !important;
+   border-radius: 0.5rem !important;
+   margin-top: 0.6rem !important;
+   margin-bottom: 0.6rem !important;
+   padding: 0.75rem 1rem !important;
+}
+
+.markdown-body :deep(code[class*="language-"]) {
+   text-shadow: none !important;
+   font-family: 'Fira Code', Consolas, Monaco, monospace;
+   font-size: 0.85em;
+}
+
+.markdown-body :deep(img) {
+   max-width: 100%;
+   height: auto;
+   border-radius: 0.5rem;
+   border: 1px solid var(--app-border-color);
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.25rem !important;
 }
 </style>
