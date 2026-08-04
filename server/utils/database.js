@@ -166,8 +166,14 @@ export async function incrementNoteReads(db, id) {
 }
 
 export async function getWeeklyStats(db) {
+   const { results } = await db.prepare(
+      "SELECT key, value FROM stats WHERE key LIKE 'stats:hits:%'"
+   ).all()
+
+   const statsMap = {}
+      (results || []).forEach(r => { statsMap[r.key] = parseInt(r.value || '0', 10) })
+
    const days = []
-   const keys = []
    const now = new Date()
 
    for (let i = 7; i >= 0; i--) {
@@ -175,23 +181,16 @@ export async function getWeeklyStats(db) {
       d.setDate(d.getDate() - i)
       const dateStr = d.toISOString().split('T')[0]
       const dayName = d.toLocaleDateString('en-US', { weekday: 'short' })
-      days.push({ date: dateStr, day: dayName, key: `stats:hits:${dateStr}` })
-      keys.push(`stats:hits:${dateStr}`)
+      const key = `stats:hits:${dateStr}`
+
+      days.push({
+         date: dateStr,
+         day: dayName,
+         hits: statsMap[key] || 0
+      })
    }
 
-   const placeholders = keys.map((_, idx) => `?${idx + 1}`).join(', ')
-   const { results } = await db.prepare(
-      `SELECT key, value FROM stats WHERE key IN (${placeholders})`
-   ).bind(...keys).all()
-
-   const statsMap = {}
-      (results || []).forEach(r => { statsMap[r.key] = parseInt(r.value || '0', 10) })
-
-   return days.map(d => ({
-      date: d.date,
-      day: d.day,
-      hits: statsMap[d.key] || 0
-   }))
+   return days
 }
 
 export async function cleanOldStats(db) {
