@@ -2,7 +2,7 @@ export async function recordHit(db, extraStats = {}) {
    const today = new Date().toISOString().split('T')[0]
    const query = `
     INSERT INTO stats (key, value) VALUES (?1, ?2)
-    ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + ?2 AS TEXT)
+    ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(stats.value AS INTEGER) + CAST(excluded.value AS INTEGER) AS TEXT)
   `
    const batch = [
       db.prepare(query).bind('stats:total_hits', '1'),
