@@ -1,5 +1,5 @@
 <template>
-   <div class="login-wrapper d-flex align-items-center justify-content-center px-3">
+   <div class="container px-3 mb-5">
       <div class="pin-form-card shadow-sm">
          <form @submit.prevent="login" class="pin-form-container">
             <div class="text-center mb-4">
@@ -138,13 +138,10 @@ onMounted(check)
    color: var(--app-secondary-text-color) !important;
 }
 
-.login-wrapper {
-   min-height: 70vh;
-}
-
 .pin-form-card {
    width: 100%;
    max-width: 420px;
+   margin: 3rem auto;
    padding: 2rem 1.75rem;
    background: var(--app-card-bg);
    border: 1px solid var(--app-border-color);
