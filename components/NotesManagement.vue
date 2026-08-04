@@ -12,7 +12,7 @@
          </div>
          <div class="d-flex align-items-center gap-2">
             <select :value="perPage" class="form-select form-select-sm per-page-select"
-               @change="emit('per-page-change', Number(($event.target as HTMLSelectElement).value))">
+               @change="emit('per-page-change', Number($event.target.value))">
                <option :value="5">5 / page</option>
                <option :value="10">10 / page</option>
                <option :value="20">20 / page</option>
@@ -118,31 +118,31 @@
    </div>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { ref, computed } from 'vue'
 
-const props = defineProps<{
-   notes: any[]
-   page: number
-   perPage: number
-   totalNotes: number
-   loading?: boolean
-   activeEditId?: string
-}>()
+const props = defineProps({
+   notes: { type: Array, default: () => [] },
+   page: { type: Number, default: 1 },
+   perPage: { type: Number, default: 10 },
+   totalNotes: { type: Number, default: 0 },
+   loading: { type: Boolean, default: false },
+   activeEditId: { type: String, default: '' }
+})
 
 const emit = defineEmits(['edit', 'delete', 'page-change', 'per-page-change', 'refresh'])
 
 const searchQuery = ref('')
 
-const totalPages = computed(() => Math.max(Math.ceil(props.totalNotes / props.perPage), 1))
+const totalPages = computed(() => Math.max(Math.ceil((props.totalNotes || 0) / (props.perPage || 10)), 1))
 
 const displayNotes = computed(() => {
-   if (!searchQuery.value.trim()) return props.notes
+   if (!searchQuery.value.trim()) return props.notes || []
    const q = searchQuery.value.toLowerCase()
-   return props.notes.filter(n => (n.title || '').toLowerCase().includes(q))
+   return (props.notes || []).filter(n => (n.title || '').toLowerCase().includes(q))
 })
 
-const formatDate = (v: number | string) => {
+const formatDate = (v) => {
    if (!v) return '-'
    let val = typeof v === 'string' && !isNaN(Number(v)) ? Number(v) : v
    if (typeof val === 'number' && val < 1e11) {
@@ -287,7 +287,6 @@ const formatDate = (v: number | string) => {
 }
 
 .note-card-row.is-editing {
-   border-color: var(--app-accent-color);
    background-color: var(--app-card-bg);
 }
 
