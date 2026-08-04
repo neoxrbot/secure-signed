@@ -5,7 +5,7 @@
             <span class="fs-xs text-muted text-uppercase fw-bold tracking-wider">Weekly Requests</span>
             <h4 class="fw-bold text-color mb-0">{{ totalHits.toLocaleString() }}</h4>
          </div>
-         <span class="badge bg-accent-subtle text-accent px-2 py-1 fs-xs fw-semibold">Last 8 Days</span>
+         <span class="badge bg-accent-subtle text-accent px-2 py-1 fs-xs fw-semibold">Last 7 Days</span>
       </div>
 
       <div class="chart-body d-flex align-items-end justify-content-between gap-2 pt-3 pb-1 border-bottom">

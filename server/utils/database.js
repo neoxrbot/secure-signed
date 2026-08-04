@@ -181,7 +181,7 @@ export async function getWeeklyStats(db) {
       const days = []
       const now = new Date()
 
-      for (let i = 7; i >= 0; i--) {
+      for (let i = 6; i >= 0; i--) {
          const d = new Date(now)
          d.setDate(d.getDate() - i)
          const dateStr = d.toISOString().split('T')[0]
@@ -203,7 +203,7 @@ export async function getWeeklyStats(db) {
 
 export async function cleanOldStats(db) {
    const cutoff = new Date()
-   cutoff.setDate(cutoff.getDate() - 8)
+   cutoff.setDate(cutoff.getDate() - 7)
    const cutoffStr = `stats:hits:${cutoff.toISOString().split('T')[0]}`
 
    return db.prepare(
