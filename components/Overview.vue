@@ -42,7 +42,7 @@
             </div>
          </div>
 
-         <div class="api-status-banner p-3 rounded d-flex align-items-center justify-content-between">
+         <!-- <div class="api-status-banner p-3 rounded d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
                <i class="bi bi-shield-check text-success fs-5"></i>
                <div>
@@ -52,7 +52,9 @@
             </div>
             <span
                class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-xs">Active</span>
-         </div>
+         </div> -->
+
+         <OverviewChart />
 
          <div class="notes-slider border-top pt-3">
             <div class="d-flex align-items-center justify-content-between mb-2">

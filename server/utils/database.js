@@ -113,6 +113,7 @@ export async function cleanOldUrls(db, retentionDays = 30) {
 export async function cleanDatabase(db, urlRetentionDays = 30) {
    const cdnRes = await cleanExpiredCdn(db)
    const urlRes = await cleanOldUrls(db, urlRetentionDays)
+   await cleanOldStats(db)
 
    return {
       deletedCdn: cdnRes.meta?.changes || 0,
@@ -162,4 +163,43 @@ export async function deleteNote(db, id) {
 
 export async function incrementNoteReads(db, id) {
    return db.prepare('UPDATE notes SET reads = reads + 1 WHERE id = ?1').bind(id).run()
+}
+
+export async function getWeeklyStats(db) {
+   const days = []
+   const keys = []
+   const now = new Date()
+
+   for (let i = 7; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().split('T')[0]
+      const dayName = d.toLocaleDateString('en-US', { weekday: 'short' })
+      days.push({ date: dateStr, day: dayName, key: `stats:hits:${dateStr}` })
+      keys.push(`stats:hits:${dateStr}`)
+   }
+
+   const placeholders = keys.map((_, idx) => `?${idx + 1}`).join(', ')
+   const { results } = await db.prepare(
+      `SELECT key, value FROM stats WHERE key IN (${placeholders})`
+   ).bind(...keys).all()
+
+   const statsMap = {}
+      (results || []).forEach(r => { statsMap[r.key] = parseInt(r.value || '0', 10) })
+
+   return days.map(d => ({
+      date: d.date,
+      day: d.day,
+      hits: statsMap[d.key] || 0
+   }))
+}
+
+export async function cleanOldStats(db) {
+   const cutoff = new Date()
+   cutoff.setDate(cutoff.getDate() - 8)
+   const cutoffStr = `stats:hits:${cutoff.toISOString().split('T')[0]}`
+
+   return db.prepare(
+      "DELETE FROM stats WHERE key LIKE 'stats:hits:%' AND key < ?"
+   ).bind(cutoffStr).run()
 }
