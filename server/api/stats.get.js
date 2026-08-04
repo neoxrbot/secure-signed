@@ -1,22 +1,24 @@
 import { getCloudflareEnv } from '../utils/cloudflare.js'
 import { getGlobalStats, getWeeklyStats } from '../utils/database.js'
+import appConfig from '../utils/app-config.js'
 
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
-   const db = env?.DB
+   const db = env.DB
 
-   if (!db) {
-      return { status: false, msg: 'Database connection failed' }
-   }
+   try {
+      const stats = await getGlobalStats(db)
+      const weekly = await getWeeklyStats(db)
 
-   const globalStats = await getGlobalStats(db)
-   const weeklyStats = await getWeeklyStats(db)
-
-   return {
-      status: true,
-      data: {
-         ...globalStats,
-         weekly: weeklyStats
+      return {
+         creator: appConfig.watermark.creator,
+         status: true,
+         data: {
+            ...stats,
+            weekly
+         }
       }
+   } catch (err) {
+      return { status: false, msg: err.message }
    }
 })
