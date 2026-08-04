@@ -42,24 +42,11 @@
             </div>
          </div>
 
-         <!-- <div class="api-status-banner p-3 rounded d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
-               <i class="bi bi-shield-check text-success fs-5"></i>
-               <div>
-                  <div class="fs-xs fw-bold text-color">Service Status</div>
-                  <div class="fs-xs text-muted">All endpoints operational</div>
-               </div>
-            </div>
-            <span
-               class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-xs">Active</span>
-         </div> -->
-
-         <OverviewChart />
+         <OverviewChart :data="stats.weekly" />
 
          <div class="notes-slider border-top pt-3">
             <div class="d-flex align-items-center justify-content-between mb-2">
                <span class="fs-xs fw-bold text-muted text-uppercase">Latest Notes</span>
-               <!-- <NuxtLink to="/admin" class="fs-xs text-muted text-decoration-none">Manage</NuxtLink> -->
             </div>
             <Transition name="fade" mode="out-in">
                <NuxtLink v-if="activeNote" :key="activeNote.id" :to="`/note/${activeNote.id}`"
@@ -87,33 +74,36 @@
    </div>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-defineProps<{
-   stats: Record<string, any>
-   isLoading?: boolean
-}>()
+defineProps({
+   stats: { type: Object, default: () => ({}) },
+   isLoading: { type: Boolean, default: false }
+})
 
 const emit = defineEmits(['refresh'])
-const notes = ref<any[]>([])
+const notes = ref([])
 const activeIndex = ref(0)
-let timer: ReturnType<typeof setInterval> | null = null
+let timer = null
 const activeNote = computed(() => notes.value[activeIndex.value] || null)
 const noteCells = computed(() => Array.from({ length: Math.min(notes.value.length || 1, 4) }, (_, i) => i))
 const noteExcerpt = (content = '') => content.replace(/[#*_`>\-!\[\]()]/g, '').slice(0, 90)
+
 const fetchNotes = async () => {
    try {
-      const response: any = await $fetch('/api/notes?public=1')
+      const response = await $fetch('/api/notes?public=1')
       notes.value = (response.data || []).slice(0, 4)
    } catch (error) {
       notes.value = []
    }
 }
+
 onMounted(() => {
    fetchNotes()
    timer = setInterval(() => { if (notes.value.length > 1) activeIndex.value = (activeIndex.value + 1) % notes.value.length }, 3500)
 })
+
 onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 

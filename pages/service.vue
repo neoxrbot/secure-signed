@@ -119,7 +119,7 @@
                                                 <div class="file-name text-truncate fs-sm fw-semibold text-color"
                                                    :title="item.file.name">{{ item.file.name }}</div>
                                                 <div class="file-size text-muted fs-xs">{{ formatBytes(item.file.size)
-                                                   }}</div>
+                                                }}</div>
                                              </div>
                                           </div>
 
@@ -212,7 +212,7 @@
                            </div>
                            <div class="d-flex align-items-center gap-3 fs-xs text-muted">
                               <span><i class="bi bi-clock me-1"></i>Expires: {{ formatDate(signResult.expires_at)
-                                 }}</span>
+                              }}</span>
                               <span><i class="bi bi-hdd-network me-1"></i>Limit: {{ signResult.max_size_mb }} MB</span>
                            </div>
                         </div>
@@ -268,25 +268,16 @@
    </div>
 </template>
 
-<script lang="ts" setup>
+<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRuntimeConfig, useNuxtApp } from '#app'
 import Overview from '@/components/Overview.vue'
 
 const { $api } = useNuxtApp()
 
-interface UploadItem {
-   file: File
-   progress: number
-   status: 'idle' | 'uploading' | 'done' | 'error'
-   url?: string
-   error?: string
-   copyStatus?: string
-}
-
-const fileQueue = ref<UploadItem[]>([])
+const fileQueue = ref([])
 const longUrl = ref('')
-const fileInputRef = ref<HTMLInputElement | null>(null)
+const fileInputRef = ref(null)
 const shortenResult = ref('')
 const uploadError = ref('')
 const shortenError = ref('')
@@ -297,7 +288,7 @@ const isSigning = ref(false)
 const copyButtonText = ref('Copy')
 const isDragging = ref(false)
 const signForm = ref({ target_url: '', filename: '', headers: '' })
-const signResult = ref<any | null>(null)
+const signResult = ref(null)
 const activeView = ref('upload')
 const isStatsLoading = ref(true)
 
@@ -309,12 +300,13 @@ const stats = ref({
    totalShorts: 0,
    totalViews: 0,
    totalProxied: 0,
-   hitsToday: 0
+   hitsToday: 0,
+   weekly: []
 })
 
 const playClickSound = () => {
    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+      const AudioContext = window.AudioContext || window.webkitAudioContext
       if (!AudioContext) return
       const ctx = new AudioContext()
       const osc = ctx.createOscillator()
@@ -331,13 +323,13 @@ const playClickSound = () => {
    } catch { }
 }
 
-const switchTab = (tab: string) => {
+const switchTab = (tab) => {
    if (isUploading.value) return
    playClickSound()
    activeView.value = tab
 }
 
-const formatBytes = (bytes: number, decimals = 2) => {
+const formatBytes = (bytes, decimals = 2) => {
    if (!bytes || bytes === 0) return '0 Bytes'
    const k = 1024; const dm = decimals < 0 ? 0 : decimals; const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
    const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -347,7 +339,7 @@ const formatBytes = (bytes: number, decimals = 2) => {
 const totalUploadBytes = computed(() => fileQueue.value.reduce((total, item) => total + item.file.size, 0))
 const hasPendingUploads = computed(() => fileQueue.value.some(item => item.status !== 'done'))
 
-const addFilesToQueue = (files: File[]) => {
+const addFilesToQueue = (files) => {
    if (isUploading.value) return
    if (fileQueue.value.length >= 10) {
       uploadError.value = 'Maximum limit of 10 files reached.'
@@ -369,16 +361,16 @@ const addFilesToQueue = (files: File[]) => {
    }
 }
 
-const handleFileChange = (event: Event) => {
+const handleFileChange = (event) => {
    if (isUploading.value) return
    playClickSound()
-   const target = event.target as HTMLInputElement
+   const target = event.target
    if (target.files?.length) {
       addFilesToQueue(Array.from(target.files))
    }
 }
 
-const handleDrop = (event: DragEvent) => {
+const handleDrop = (event) => {
    if (isUploading.value) return
    playClickSound()
    isDragging.value = false;
@@ -393,7 +385,7 @@ const triggerFileInput = () => {
    fileInputRef.value?.click()
 }
 
-const removeFileAt = (index: number) => {
+const removeFileAt = (index) => {
    if (isUploading.value) return
    playClickSound()
    fileQueue.value.splice(index, 1)
@@ -411,7 +403,7 @@ const clearAllFiles = () => {
    if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
-const uploadSingleFile = (item: UploadItem) => new Promise<void>((resolve, reject) => {
+const uploadSingleFile = (item) => new Promise((resolve, reject) => {
    const config = useRuntimeConfig()
    const xhr = new XMLHttpRequest()
    const formData = new FormData()
@@ -468,14 +460,14 @@ const handleUpload = async () => {
    try {
       await Promise.all(pendingItems.map(item => uploadSingleFile(item)))
       fetchStats()
-   } catch (err: any) {
+   } catch (err) {
       uploadError.value = 'One or more file uploads failed.'
    } finally {
       isUploading.value = false
    }
 }
 
-const copyItemUrl = async (item: UploadItem) => {
+const copyItemUrl = async (item) => {
    playClickSound()
    if (!item.url) return
    try {
@@ -501,6 +493,7 @@ const fetchStats = async () => {
          stats.value.totalViews = response.data.total_views || 0
          stats.value.totalProxied = response.data.total_proxied || 0
          stats.value.hitsToday = response.data.hits_today || 0
+         stats.value.weekly = response.data.weekly || []
       }
    } catch (error) {
       console.error("Failed to fetch stats", error)
@@ -517,31 +510,31 @@ const handleShorten = async () => {
       const response = await $api('/api/short', { method: 'POST', body: { url: longUrl.value } })
       if (response.status) { shortenResult.value = response.data.url; fetchStats() }
       longUrl.value = ''
-   } catch (error: any) {
+   } catch (error) {
       shortenError.value = error.data?.msg || 'Server error.'
    } finally { isShortening.value = false }
 }
 
-const formatDate = (date: string) => date ? new Date(date).toLocaleString() : '-'
+const formatDate = (date) => date ? new Date(date).toLocaleString() : '-'
 
 const handleSign = async () => {
    playClickSound()
    if (!signForm.value.target_url) { signError.value = 'Please enter a target URL.'; return }
    isSigning.value = true; signError.value = ''; signResult.value = null
    try {
-      let headers: any = undefined
+      let headers = undefined
       if (signForm.value.headers.trim()) headers = JSON.parse(signForm.value.headers)
-      const body: any = { target_url: signForm.value.target_url }
+      const body = { target_url: signForm.value.target_url }
       if (signForm.value.filename) body.filename = signForm.value.filename
       if (headers) body.headers = headers
       const response = await $api('/api/sign', { method: 'POST', body })
       if (response.status) signResult.value = response.data
-   } catch (error: any) {
+   } catch (error) {
       signError.value = error instanceof SyntaxError ? 'Headers must be valid JSON.' : (error.data?.msg || error.message || 'Server error.')
    } finally { isSigning.value = false }
 }
 
-const copyToClipboard = async (text: string) => {
+const copyToClipboard = async (text) => {
    playClickSound()
    try {
       await navigator.clipboard.writeText(text); copyButtonText.value = 'Copied!';

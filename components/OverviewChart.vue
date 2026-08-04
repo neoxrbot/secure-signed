@@ -1,18 +1,22 @@
 <template>
    <div class="overview-card p-3 rounded-3">
-      <div class="mb-3">
-         <span class="fs-xs text-muted text-uppercase fw-bold">Total Requests (8 Days)</span>
-         <h4 class="fw-bold text-color mb-0">{{ totalHits.toLocaleString() }}</h4>
+      <div class="d-flex align-items-center justify-content-between mb-3">
+         <div>
+            <span class="fs-xs text-muted text-uppercase fw-bold tracking-wider">Weekly Requests</span>
+            <h4 class="fw-bold text-color mb-0">{{ totalHits.toLocaleString() }}</h4>
+         </div>
+         <span class="badge bg-accent-subtle text-accent px-2 py-1 fs-xs fw-semibold">Last 8 Days</span>
       </div>
 
-      <div class="chart-container d-flex align-items-end justify-content-between gap-2 pt-4 pb-2 px-2">
+      <div class="chart-body d-flex align-items-end justify-content-between gap-2 pt-3 pb-1 border-bottom">
          <div v-for="(item, idx) in chartData" :key="idx"
             class="bar-col d-flex flex-column align-items-center flex-grow-1">
-            <div class="bar-wrapper w-100 d-flex align-items-end justify-content-center">
-               <div class="bar-item" :style="{ height: getBarHeight(item.hits) }"
-                  :title="`${item.date}: ${item.hits} requests`"></div>
+            <span class="fs-xxs text-muted mb-1 fw-bold">{{ formatNum(item.hits) }}</span>
+            <div class="bar-track w-100 d-flex align-items-end justify-content-center">
+               <div class="bar-fill" :style="{ height: getBarHeight(item.hits) }"
+                  :title="`${item.date}: ${item.hits} hits`"></div>
             </div>
-            <span class="fs-xs text-muted mt-2">{{ item.day }}</span>
+            <span class="fs-xs text-muted mt-2 fw-semibold">{{ item.day }}</span>
          </div>
       </div>
    </div>
@@ -41,19 +45,45 @@ const getBarHeight = (hits) => {
    const pct = Math.round((hits / maxHits.value) * 100)
    return `${Math.max(pct, 6)}%`
 }
+
+const formatNum = (num) => {
+   if (!num) return '0'
+   if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
+   return num.toString()
+}
 </script>
 
 <style scoped>
+.fs-xxs {
+   font-size: 0.65rem;
+}
+
 .fs-xs {
-   font-size: 0.7rem;
+   font-size: 0.725rem;
+}
+
+.tracking-wider {
+   letter-spacing: 0.05em;
 }
 
 .text-color {
    color: var(--app-text-color) !important;
 }
 
+.text-accent {
+   color: var(--app-accent-color) !important;
+}
+
+.bg-accent-subtle {
+   background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 .text-muted {
    color: var(--app-secondary-text-color) !important;
+}
+
+.border-bottom {
+   border-color: var(--app-border-color) !important;
 }
 
 .overview-card {
@@ -61,28 +91,23 @@ const getBarHeight = (hits) => {
    border: 1px solid var(--app-border-color);
 }
 
-.chart-container {
-   height: 160px;
-   border-bottom: 1px solid var(--app-border-color);
+.chart-body {
+   height: 150px;
 }
 
-.bar-col {
-   height: 100%;
+.bar-track {
+   height: 90px;
 }
 
-.bar-wrapper {
-   height: 100%;
-}
-
-.bar-item {
+.bar-fill {
    width: 100%;
-   max-width: 24px;
-   background-color: var(--app-text-color);
+   max-width: 22px;
+   background-color: var(--app-accent-color, #0d6efd);
    border-radius: 4px 4px 0 0;
    transition: height 0.3s ease;
 }
 
-.bar-item:hover {
-   background-color: var(--app-accent-color);
+.bar-col:hover .bar-fill {
+   opacity: 0.8;
 }
 </style>
