@@ -25,16 +25,9 @@
                            }}</span>
                      </div>
                   </div>
-                  <div class="d-flex align-items-center gap-2">
-                     <div class="form-check form-switch mb-0 me-2">
-                        <input id="previewSwitch" v-model="isPreview" class="form-check-input" type="checkbox"
-                           :disabled="loading || isUploadingPhoto">
-                        <label class="form-check-label fs-xs text-color fw-semibold" for="previewSwitch">Preview</label>
-                     </div>
-                     <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
-                        <i class="bi bi-x-circle me-1"></i> Cancel Edit
-                     </button>
-                  </div>
+                  <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
+                     <i class="bi bi-x-circle me-1"></i> Cancel Edit
+                  </button>
                </div>
 
                <div class="p-4 flex-grow-1">
@@ -49,29 +42,30 @@
                         <div class="d-flex justify-content-between align-items-center mb-2">
                            <label
                               class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Content</label>
-                           <div v-if="!isPreview" class="toolbar d-flex align-items-center gap-1">
+                           <div class="toolbar d-flex align-items-center gap-1">
                               <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')"
-                                 title="Bold" :disabled="loading || isUploadingPhoto"><i
+                                 title="Bold" :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-type-bold"></i></button>
                               <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')"
-                                 title="Italic" :disabled="loading || isUploadingPhoto"><i
+                                 title="Italic" :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-type-italic"></i></button>
                               <button type="button" class="btn btn-xs btn-outline-secondary" @click="insert('\n- ')"
-                                 title="List" :disabled="loading || isUploadingPhoto"><i
+                                 title="List" :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-list-ul"></i></button>
                               <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')"
-                                 title="Code" :disabled="loading || isUploadingPhoto"><i
+                                 title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-code"></i></button>
                               <button type="button" class="btn btn-xs btn-outline-secondary"
                                  @click="imageInput?.click()" title="Upload Photo"
-                                 :disabled="loading || isUploadingPhoto"><i class="bi bi-image"></i> Photo</button>
+                                 :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-image"></i>
+                                 Photo</button>
                               <input ref="imageInput" type="file" class="d-none" accept="image/*" @change="uploadPhoto"
-                                 :disabled="isUploadingPhoto">
+                                 :disabled="isUploadingPhoto || isPreview">
                            </div>
                         </div>
 
                         <div class="textarea-wrapper position-relative">
-                           <div v-if="isPreview" class="preview-box p-3 border rounded overflow-auto">
+                           <div v-if="isPreview" class="preview-box form-control overflow-auto">
                               <div v-if="previewHtml" class="markdown-body" v-html="previewHtml"></div>
                               <span v-else class="text-muted fs-xs italic">Nothing to preview...</span>
                            </div>
@@ -86,10 +80,19 @@
                         </div>
                      </div>
 
-                     <div class="form-check form-switch mb-4">
-                        <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox"
-                           :disabled="loading || isUploadingPhoto">
-                        <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private</label>
+                     <div class="d-flex align-items-center gap-4 mb-4">
+                        <div class="form-check form-switch mb-0">
+                           <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox"
+                              :disabled="loading || isUploadingPhoto">
+                           <label class="form-check-label fs-sm text-color fw-semibold"
+                              for="privateSwitch">Private</label>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                           <input id="previewSwitch" v-model="isPreview" class="form-check-input" type="checkbox"
+                              :disabled="loading || isUploadingPhoto">
+                           <label class="form-check-label fs-sm text-color fw-semibold"
+                              for="previewSwitch">Preview</label>
+                        </div>
                      </div>
 
                      <div class="d-flex gap-2">
@@ -338,6 +341,7 @@ onMounted(check)
 .note-textarea,
 .preview-box {
    height: 278px;
+   padding: 0.375rem 0.75rem !important;
 }
 
 .note-textarea {
