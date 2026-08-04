@@ -123,7 +123,7 @@ import MarkdownIt from '@/utils/markdown-it'
 import Prism from 'prismjs'
 import 'prismjs/themes/prism-tomorrow.css'
 
-useHead({ title: 'Admin Workspace' })
+useHead({ title: 'Workspace' })
 
 const { $api } = useNuxtApp()
 const router = useRouter()
@@ -140,7 +140,7 @@ const perPage = ref(10)
 const totalNotes = ref(0)
 const editor = ref(null)
 const imageInput = ref(null)
-const form = ref({ id: '', title: '', content: '', is_private: false })
+const form = ref({ id: '', title: '', content: '', is_private: true })
 
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
 
@@ -234,7 +234,7 @@ const removeNote = async (id) => {
 }
 
 const resetForm = () => {
-   form.value = { id: '', title: '', content: '', is_private: false }
+   form.value = { id: '', title: '', content: '', is_private: true }
    isPreview.value = false
 }
 
@@ -335,6 +335,11 @@ onMounted(check)
    color: var(--app-secondary-text-color) !important;
 }
 
+.note-textarea,
+.preview-box {
+   height: 278px;
+}
+
 .note-textarea {
    font-family: inherit;
    resize: vertical;
@@ -347,8 +352,7 @@ onMounted(check)
 .preview-box {
    background-color: var(--app-bg);
    border-color: var(--app-border-color) !important;
-   min-height: 278px;
-   max-height: 500px;
+   overflow-y: auto;
 }
 
 .upload-overlay {
