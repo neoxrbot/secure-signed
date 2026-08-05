@@ -124,7 +124,7 @@ import { ref, computed } from 'vue'
 const props = defineProps({
    notes: { type: Array, default: () => [] },
    page: { type: Number, default: 1 },
-   perPage: { type: Number, default: 10 },
+   perPage: { type: Number, default: 5 },
    totalNotes: { type: Number, default: 0 },
    loading: { type: Boolean, default: false },
    activeEditId: { type: String, default: '' }
