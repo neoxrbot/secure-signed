@@ -139,7 +139,7 @@ const error = ref('')
 
 const notes = ref([])
 const page = ref(1)
-const perPage = ref(10)
+const perPage = ref(5)
 const totalNotes = ref(0)
 const editor = ref(null)
 const imageInput = ref(null)
