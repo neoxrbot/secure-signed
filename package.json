@@ -12,14 +12,15 @@
     "@pinia/nuxt": "^0.11.1",
     "bootstrap": "^5.3.8",
     "crypto-js": "^4.2.0",
+    "markdown-it": "^14.1.0",
     "nprogress": "^0.2.0",
     "nuxt": "^3.17.5",
     "pinia": "^3.0.4",
+    "plyr": "^3.8.4",
     "prismjs": "^1.30.0",
     "sweetalert2": "^11.22.1",
     "vue": "^3.5.17",
-    "vue-router": "^4.5.1",
-    "markdown-it": "^14.1.0"
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@types/bootstrap": "^5.2.10",

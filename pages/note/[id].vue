@@ -81,6 +81,9 @@ import { useRoute, useRouter, useNuxtApp, useHead } from '#app'
 import Prism from 'prismjs'
 import 'prismjs/themes/prism-tomorrow.css'
 
+import Plyr from 'plyr'
+import 'plyr/dist/plyr.css'
+
 const route = useRoute()
 const router = useRouter()
 const { $api } = useNuxtApp()
@@ -90,22 +93,34 @@ const pending = ref(true)
 const error = ref('')
 const copyStatus = ref('Share')
 
-const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
+const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
 const cleanContent = computed(() => {
    let text = note.value.content || ''
-
    text = text.replace(/[\u2010-\u2015\u2212]/g, '-')
-
    return text.replace(/(?:\r?\n|^)\s*---+\s*(?=\r?\n|$)/g, '\n\n---\n\n')
 })
 
 const html = computed(() => md.render(cleanContent.value))
 
+const initPlyr = async () => {
+   await nextTick()
+   if (typeof window !== 'undefined') {
+      const videos = document.querySelectorAll('.markdown-body video')
+      videos.forEach(v => {
+         if (!v.classList.contains('plyr-initialized')) {
+            v.classList.add('plyr-initialized')
+            new Plyr(v, { controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] })
+         }
+      })
+   }
+}
+
 watch(html, async () => {
    await nextTick()
    if (typeof window !== 'undefined') {
       Prism.highlightAll()
+      initPlyr()
    }
 })
 
@@ -177,6 +192,7 @@ onMounted(async () => {
       await nextTick()
       if (typeof window !== 'undefined') {
          Prism.highlightAll()
+         initPlyr()
       }
    } catch (e) {
       error.value = e.data?.message || 'Note not found or private'
@@ -373,19 +389,10 @@ onMounted(async () => {
    margin-bottom: 0.15rem;
 }
 
-.markdown-body :deep(li input[type="checkbox"]) {
-   margin-right: 0.35rem;
-}
-
 .markdown-body :deep(a) {
    color: var(--app-accent-color);
    text-decoration: underline;
    text-underline-offset: 3px;
-}
-
-.markdown-body :deep(del),
-.markdown-body :deep(s) {
-   color: var(--app-secondary-text-color);
 }
 
 .markdown-body :deep(code) {
@@ -429,16 +436,6 @@ onMounted(async () => {
    font-size: 0.85em;
 }
 
-.markdown-body :deep(blockquote) {
-   border-left: 3px solid var(--app-accent-color);
-   padding-left: 0.85rem;
-   margin-left: 0;
-   margin-top: 0.6rem;
-   margin-bottom: 0.6rem;
-   color: var(--app-secondary-text-color);
-   font-style: italic;
-}
-
 .markdown-body :deep(img) {
    max-width: 100%;
    height: auto;
@@ -448,20 +445,11 @@ onMounted(async () => {
    margin-bottom: 0.25rem !important;
 }
 
-.markdown-body :deep(table) {
-   width: 100%;
-   border-collapse: collapse;
-   margin-top: 0.6rem;
-   margin-bottom: 0.6rem;
-}
-
-.markdown-body :deep(th),
-.markdown-body :deep(td) {
+.markdown-body :deep(.plyr) {
+   border-radius: 0.5rem;
+   overflow: hidden;
+   margin-top: 0.5rem;
+   margin-bottom: 0.5rem;
    border: 1px solid var(--app-border-color);
-   padding: 0.4rem 0.65rem;
-}
-
-.markdown-body :deep(th) {
-   background-color: var(--app-bg);
 }
 </style>

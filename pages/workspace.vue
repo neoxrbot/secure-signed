@@ -56,11 +56,11 @@
                                  title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-code"></i></button>
                               <button type="button" class="btn btn-xs btn-outline-secondary"
-                                 @click="imageInput?.click()" title="Upload Photo"
-                                 :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-image"></i>
-                                 Photo</button>
-                              <input ref="imageInput" type="file" class="d-none" accept="image/*" @change="uploadPhoto"
-                                 :disabled="isUploadingPhoto || isPreview">
+                                 @click="imageInput?.click()" title="Upload Media"
+                                 :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-paperclip"></i>
+                                 Media</button>
+                              <input ref="imageInput" type="file" class="d-none" accept="image/*,video/*"
+                                 @change="uploadPhoto" :disabled="isUploadingPhoto || isPreview">
                            </div>
                         </div>
 
@@ -75,7 +75,7 @@
                            <div v-if="isUploadingPhoto"
                               class="upload-overlay d-flex flex-column align-items-center justify-content-center">
                               <div class="spinner-border spinner-border-sm text-accent mb-2" role="status"></div>
-                              <span class="fs-xs fw-semibold text-color">Uploading photo...</span>
+                              <span class="fs-xs fw-semibold text-color">Uploading media...</span>
                            </div>
                         </div>
                      </div>
@@ -125,6 +125,8 @@ import { useNuxtApp, useRouter, useState, useHead } from '#app'
 import MarkdownIt from '@/utils/markdown-it'
 import Prism from 'prismjs'
 import 'prismjs/themes/prism-tomorrow.css'
+import Plyr from 'plyr'
+import 'plyr/dist/plyr.css'
 
 useHead({ title: 'Workspace' })
 
@@ -145,7 +147,7 @@ const editor = ref(null)
 const imageInput = ref(null)
 const form = ref({ id: '', title: '', content: '', is_private: true })
 
-const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
+const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
 const previewHtml = computed(() => {
    let text = form.value.content || ''
@@ -155,11 +157,25 @@ const previewHtml = computed(() => {
    return md.render(text)
 })
 
+const initPlyr = async () => {
+   await nextTick()
+   if (typeof window !== 'undefined') {
+      const videos = document.querySelectorAll('.markdown-body video')
+      videos.forEach(v => {
+         if (!v.classList.contains('plyr-initialized')) {
+            v.classList.add('plyr-initialized')
+            new Plyr(v, { controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] })
+         }
+      })
+   }
+}
+
 watch([isPreview, previewHtml], async () => {
    if (isPreview.value) {
       await nextTick()
       if (typeof window !== 'undefined') {
          Prism.highlightAll()
+         initPlyr()
       }
    }
 })
@@ -260,9 +276,14 @@ const uploadPhoto = async (ev) => {
       const fd = new FormData()
       fd.append('file', file)
       const r = await $fetch('/api/upload', { method: 'POST', body: fd })
-      insert(`\n![${file.name}](${r.data.url.replace(/^https?:\/\/[^\/]+/, '')})\n`)
+      const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
+      if (file.type.startsWith('video/')) {
+         insert(`\n<video controls class="plyr-video" src="${relativeUrl}"></video>\n`)
+      } else {
+         insert(`\n![${file.name}](${relativeUrl})\n`)
+      }
    } catch (e) {
-      error.value = e.message || 'Photo upload failed'
+      error.value = e.message || 'Media upload failed'
    } finally {
       isUploadingPhoto.value = false
       if (imageInput.value) imageInput.value.value = ''
@@ -472,5 +493,13 @@ onMounted(check)
    border: 1px solid var(--app-border-color);
    margin-top: 0.25rem !important;
    margin-bottom: 0.25rem !important;
+}
+
+.markdown-body :deep(.plyr) {
+   border-radius: 0.5rem;
+   overflow: hidden;
+   margin-top: 0.5rem;
+   margin-bottom: 0.5rem;
+   border: 1px solid var(--app-border-color);
 }
 </style>
