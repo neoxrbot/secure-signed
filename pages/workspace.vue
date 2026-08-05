@@ -49,8 +49,9 @@
                               <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')"
                                  title="Italic" :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-type-italic"></i></button>
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="insert('\n- ')"
-                                 title="List" :disabled="loading || isUploadingPhoto || isPreview"><i
+                              <button type="button" class="btn btn-xs btn-outline-secondary"
+                                 @click="insertAtCursor('\n- ')" title="List"
+                                 :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-list-ul"></i></button>
                               <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')"
                                  title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i
@@ -272,15 +273,33 @@ const resetForm = () => {
    isPreview.value = false
 }
 
-const insert = (text) => {
-   form.value.content += text
+const insertAtCursor = (text) => {
+   const el = editor.value
+   if (!el) {
+      form.value.content += text
+      return
+   }
+   const start = el.selectionStart ?? form.value.content.length
+   const end = el.selectionEnd ?? form.value.content.length
+   const before = form.value.content.slice(0, start)
+   const after = form.value.content.slice(end)
+   form.value.content = before + text + after
+   nextTick(() => {
+      el.focus()
+      const newPos = start + text.length
+      el.setSelectionRange(newPos, newPos)
+   })
 }
 
 const wrap = (a, b) => {
    const el = editor.value
-   if (!el) return insert(a + b)
+   if (!el) return insertAtCursor(a + b)
    const s = el.selectionStart, e = el.selectionEnd
    form.value.content = form.value.content.slice(0, s) + a + form.value.content.slice(s, e) + b + form.value.content.slice(e)
+   nextTick(() => {
+      el.focus()
+      el.setSelectionRange(s + a.length, e + a.length)
+   })
 }
 
 const uploadPhoto = async (ev) => {
@@ -292,11 +311,10 @@ const uploadPhoto = async (ev) => {
       fd.append('file', file)
       const r = await $fetch('/api/upload', { method: 'POST', body: fd })
       const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
-      if (file.type.startsWith('video/')) {
-         insert(`\n<video controls class="plyr-video" src="${relativeUrl}"></video>\n`)
-      } else {
-         insert(`\n![${file.name}](${relativeUrl})\n`)
-      }
+      const mediaTag = file.type.startsWith('video/')
+         ? `\n<video controls class="plyr-video" src="${relativeUrl}"></video>\n`
+         : `\n![${file.name}](${relativeUrl})\n`
+      insertAtCursor(mediaTag)
    } catch (e) {
       error.value = e.message || 'Media upload failed'
    } finally {
