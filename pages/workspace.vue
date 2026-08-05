@@ -164,7 +164,22 @@ const initPlyr = async () => {
       videos.forEach(v => {
          if (!v.classList.contains('plyr-initialized')) {
             v.classList.add('plyr-initialized')
-            new Plyr(v, { controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] })
+            new Plyr(v, {
+               ratio: '16:9',
+               controls: [
+                  'play-large',
+                  'play',
+                  'progress',
+                  'current-time',
+                  'duration',
+                  'mute',
+                  'volume',
+                  'settings',
+                  'pip',
+                  'airplay',
+                  'fullscreen'
+               ]
+            })
          }
       })
    }
@@ -496,10 +511,60 @@ onMounted(check)
 }
 
 .markdown-body :deep(.plyr) {
-   border-radius: 0.5rem;
+   --plyr-color-main: var(--app-accent-color);
+   --plyr-range-fill-background: var(--app-accent-color);
+   --plyr-range-track-background: var(--app-border-color) !important;
+   --plyr-video-range-track-background: var(--app-border-color) !important;
+   --plyr-range-track-height: 4px;
+   --plyr-range-thumb-height: 12px;
+   --plyr-range-thumb-active-scale: 1.15;
+   width: 100%;
+   aspect-ratio: 16 / 9;
+   background-color: #000;
+   border-radius: 0.75rem;
    overflow: hidden;
-   margin-top: 0.5rem;
-   margin-bottom: 0.5rem;
    border: 1px solid var(--app-border-color);
+   margin-top: 0.6rem;
+   margin-bottom: 0.6rem;
+}
+
+.markdown-body :deep(.plyr--video) {
+   background: #000;
+   height: 100%;
+}
+
+.markdown-body :deep(.plyr__control--overlaid) {
+   background: var(--app-accent-color) !important;
+   color: var(--app-accent-text-color) !important;
+}
+
+.markdown-body :deep(.plyr__control--overlaid:hover) {
+   background: var(--app-accent-color) !important;
+   opacity: 0.9 !important;
+}
+
+.markdown-body :deep(.plyr__control--overlaid svg) {
+   fill: var(--app-accent-text-color) !important;
+}
+
+.markdown-body :deep(.plyr__video-wrapper) {
+   height: 100% !important;
+   padding-bottom: 0 !important;
+   background: #000;
+}
+
+.markdown-body :deep(.plyr video) {
+   width: 100% !important;
+   height: 100% !important;
+   object-fit: contain !important;
+}
+
+.markdown-body :deep(.plyr input[type=range]::-webkit-slider-runnable-track) {
+   background: var(--app-border-color) !important;
+}
+
+.markdown-body :deep(.plyr__control:hover:not(.plyr__control--overlaid)) {
+   background: var(--app-bg) !important;
+   color: var(--app-accent-color) !important;
 }
 </style>
