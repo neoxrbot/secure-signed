@@ -39,36 +39,6 @@
          </div>
       </div>
 
-      <!-- <div class="scope-card mb-5">
-         <span class="scope-corner scope-corner-tl"></span>
-         <span class="scope-corner scope-corner-tr"></span>
-         <span class="scope-corner scope-corner-bl"></span>
-         <span class="scope-corner scope-corner-br"></span>
-
-         <div class="scope-header p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="d-flex align-items-center gap-2">
-               <span class="scope-dot"></span>
-               <span class="scope-label font-monospace">POST /api/upload &middot; live playground</span>
-            </div>
-            <div class="lang-tabs d-flex align-items-center gap-1">
-               <button v-for="lang in ['curl', 'javascript', 'python']" :key="lang" class="lang-tab-btn"
-                  :class="{ 'active': activeLang === lang }" @click="switchLang(lang)">
-                  {{ lang.toUpperCase() }}
-               </button>
-            </div>
-         </div>
-
-         <div class="scope-body p-3 p-md-4">
-            <div class="d-flex align-items-center justify-content-end mb-2">
-               <button class="btn-copy-code" @click="copyCode">
-                  <i :class="copyStatus === 'Copied!' ? 'bi bi-check-lg text-success' : 'bi bi-clipboard'"></i>
-                  <span>{{ copyStatus }}</span>
-               </button>
-            </div>
-            <pre class="code-preview-block font-monospace mb-0"><code :class="`language-${grammarKey}`" v-html="highlightedCode"></code></pre>
-         </div>
-      </div> -->
-
       <div class="ready-panel p-4 p-md-5 text-center">
          <span class="plate-eyebrow d-block mb-2">Status: Ready</span>
          <h5 class="fw-bold plate-title-sm mb-2">Ready to Integrate?</h5>
@@ -83,36 +53,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useHead, useRequestURL, useRouter } from '#app'
-import Prism from 'prismjs'
-import 'prismjs/components/prism-clike'
-import 'prismjs/components/prism-javascript'
-import 'prismjs/components/prism-python'
-import 'prismjs/components/prism-bash'
+import { useRouter } from '#app'
 
 const router = useRouter()
-const activeLang = ref('curl')
-const copyStatus = ref('Copy Code')
-
-// Domain is derived from the current request/browser origin, never hardcoded.
-const { origin } = useRequestURL()
-
-const codeExamples = computed(() => ({
-   curl: `curl -X POST "${origin}/api/upload" \\\n  -F "file=@file1.jpg" \\\n  -F "file=@file2.pdf"`,
-   javascript: `const formData = new FormData()\nformData.append('file', fileInput.files[0])\n\nconst response = await fetch('/api/upload', {\n  method: 'POST',\n  body: formData\n})\nconst result = await response.json()`,
-   python: `import requests\n\nfiles = [('files', open('document.pdf', 'rb'))]\nresponse = requests.post('${origin}/api/upload', files=files)\nprint(response.json())`
-}))
-
-// Map our UI language tabs to Prism grammar names.
-const grammarMap = { curl: 'bash', javascript: 'javascript', python: 'python' }
-const grammarKey = computed(() => grammarMap[activeLang.value])
-
-const highlightedCode = computed(() => {
-   const grammar = Prism.languages[grammarKey.value]
-   const code = codeExamples.value[activeLang.value]
-   return grammar ? Prism.highlight(code, grammar, grammarKey.value) : code
-})
 
 const specs = [
    {
@@ -156,20 +99,6 @@ const playClickSound = () => {
    } catch { }
 }
 
-const switchLang = (lang) => {
-   playClickSound()
-   activeLang.value = lang
-}
-
-const copyCode = async () => {
-   playClickSound()
-   try {
-      await navigator.clipboard.writeText(codeExamples.value[activeLang.value])
-      copyStatus.value = 'Copied!'
-      setTimeout(() => { copyStatus.value = 'Copy Code' }, 2000)
-   } catch { }
-}
-
 const navigateTo = (path) => {
    playClickSound()
    router.push(path)
@@ -177,21 +106,15 @@ const navigateTo = (path) => {
 </script>
 
 <style scoped>
-/* ------------------------------------------------------------------
-   Control-panel direction, boxed "Signal Path" module grid, and
-   Prism-highlighted playground. Colors always come from the
-   --app-* vars defined in style.css — never redefined here.
---------------------------------------------------------------------- */
-
 .max-w-500 {
    max-width: 500px;
 }
 
 .panel-hero {
    max-width: 660px;
+   animation: fadeInUp 0.5s ease backwards;
 }
 
-/* -- plate typography -------------------------------------------------- */
 .plate-eyebrow {
    font-family: 'Stack Sans Notch', sans-serif;
    font-size: 0.7rem;
@@ -232,7 +155,6 @@ const navigateTo = (path) => {
    color: var(--app-secondary-text-color);
 }
 
-/* -- panel buttons ---------------------------------------------------- */
 .panel-btn {
    background: transparent;
    border: 1px solid var(--app-border-color);
@@ -243,11 +165,11 @@ const navigateTo = (path) => {
    letter-spacing: 0.02em;
    padding: 0.6rem 1.3rem;
    border-radius: 0.3rem;
-   transition: border-color .2s, color .2s, background-color .2s;
+   transition: color .2s, background-color .2s;
 }
 
 .panel-btn:hover {
-   border-color: var(--app-accent-color);
+   border-color: var(--app-border-color);
    color: var(--app-accent-color);
 }
 
@@ -258,16 +180,18 @@ const navigateTo = (path) => {
 }
 
 .panel-btn-solid:hover {
-   background-color: transparent;
-   color: var(--app-accent-color);
+   background-color: var(--app-accent-color);
+   opacity: 0.9;
+   border-color: var(--app-accent-color);
+   color: var(--app-accent-text-color);
 }
 
-/* -- signal path (box grid) --------------------------------------------- */
 .signal-card {
    background-color: var(--app-card-bg);
    border: 1px solid var(--app-border-color);
    border-radius: 0.5rem;
    overflow: hidden;
+   animation: fadeInUp 0.5s ease 0.15s backwards;
 }
 
 .signal-header {
@@ -342,111 +266,22 @@ const navigateTo = (path) => {
    color: var(--app-secondary-text-color);
 }
 
-/* -- scope card (measurement-frame sandbox) ------------------------------ */
-.scope-card {
-   position: relative;
-   background-color: var(--app-card-bg);
-   border: 1px solid var(--app-border-color);
-   border-radius: 0.375rem;
-}
-
-.scope-corner {
-   position: absolute;
-   width: 14px;
-   height: 14px;
-   border: 2px solid var(--app-accent-color);
-   opacity: .8;
-}
-
-.scope-corner-tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
-.scope-corner-tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
-.scope-corner-bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
-.scope-corner-br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
-
-.scope-header {
-   border-bottom: 1px solid var(--app-border-color);
-}
-
-.scope-dot {
-   width: 6px;
-   height: 6px;
-   border-radius: 50%;
-   background-color: #198754;
-   box-shadow: 0 0 6px #198754;
-   flex-shrink: 0;
-}
-
-.scope-label {
-   font-size: 0.7rem;
-   color: var(--app-secondary-text-color);
-}
-
-.lang-tabs {
-   background-color: var(--app-bg);
-   padding: 3px;
-   border-radius: 0.375rem;
-   border: 1px solid var(--app-border-color);
-}
-
-.lang-tab-btn {
-   border: none;
-   background: transparent;
-   color: var(--app-secondary-text-color);
-   font-size: 0.7rem;
-   font-weight: 700;
-   padding: 0.2rem 0.6rem;
-   border-radius: 0.25rem;
-   transition: all 0.2s ease;
-}
-
-.lang-tab-btn.active {
-   background-color: var(--app-accent-color);
-   color: var(--app-accent-text-color);
-}
-
-.code-preview-block {
-   background-color: var(--app-bg);
-   border: 1px solid var(--app-border-color);
-   padding: 1rem;
-   border-radius: 0.375rem;
-   color: var(--app-text-color);
-   font-size: 0.75rem;
-   line-height: 1.6;
-   overflow-x: auto;
-}
-
-.btn-copy-code {
-   border: none;
-   background: transparent;
-   color: var(--app-secondary-text-color);
-   font-size: 0.75rem;
-   display: flex;
-   align-items: center;
-   gap: 0.35rem;
-   transition: color 0.2s;
-}
-
-.btn-copy-code:hover {
-   color: var(--app-text-color);
-}
-
-/* -- Prism token colors, kept monochrome to match the brand's mono
-      palette: weight/opacity carry the contrast, not hue. -------------- */
-.code-preview-block :deep(.token.comment) { color: var(--app-secondary-text-color); opacity: .8; }
-.code-preview-block :deep(.token.string) { color: var(--app-text-color); }
-.code-preview-block :deep(.token.keyword) { color: var(--app-accent-color); font-weight: 700; }
-.code-preview-block :deep(.token.function) { color: var(--app-accent-color); font-weight: 600; }
-.code-preview-block :deep(.token.number),
-.code-preview-block :deep(.token.boolean) { color: var(--app-secondary-text-color); }
-.code-preview-block :deep(.token.punctuation),
-.code-preview-block :deep(.token.operator) { color: var(--app-secondary-text-color); opacity: .85; }
-.code-preview-block :deep(.token.parameter),
-.code-preview-block :deep(.token.property) { color: var(--app-text-color); }
-
-/* -- closing panel -------------------------------------------------------- */
 .ready-panel {
    background-color: var(--app-card-bg);
    border: 1px solid var(--app-border-color);
    border-radius: 0.5rem;
+   animation: fadeInUp 0.5s ease 0.3s backwards;
+}
+
+@keyframes fadeInUp {
+   from {
+      opacity: 0;
+      transform: translateY(16px);
+   }
+
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
 }
 </style>
