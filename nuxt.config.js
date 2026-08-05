@@ -17,13 +17,7 @@ export default defineNuxtConfig({
    },
    ssr: false,
    nitro: {
-      preset: 'cloudflare-pages',
-      // devProxy: {
-      //    '/api': {
-      //       target: 'https://secure-signed.pages.dev',
-      //       changeOrigin: true
-      //    }
-      // }
+      preset: 'cloudflare-pages'
    },
    modules: ['@pinia/nuxt'],
    srcDir: '.',

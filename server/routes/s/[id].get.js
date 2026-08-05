@@ -1,4 +1,3 @@
-// server/routes/s/[id].get.js
 import { getCloudflareEnv } from '../../utils/cloudflare.js'
 import { getShortUrl, incrementShortUrlView } from '../../utils/database.js'
 

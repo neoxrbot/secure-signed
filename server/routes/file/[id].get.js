@@ -1,4 +1,3 @@
-// server/routes/file/[id].get.js
 import { getCloudflareEnv } from '../../utils/cloudflare.js'
 import { recordHit } from '../../utils/database.js'
 
@@ -13,7 +12,6 @@ export default defineEventHandler(async (event) => {
    }
 
    try {
-      // Ambil path file langsung dari Telegram menggunakan ID di URL
       const tgRes = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/getFile?file_id=${telegramFileId}`)
       const tgData = await tgRes.json()
 
@@ -33,7 +31,6 @@ export default defineEventHandler(async (event) => {
          return new Response('Failed fetching file content from storage', { status: 502 })
       }
 
-      // Update statistik download global saja
       await recordHit(db, {
          'stats:total_download_size': fileSize
       })

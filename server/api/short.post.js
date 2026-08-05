@@ -1,4 +1,3 @@
-// server/api/short.post.js
 import { getCloudflareEnv } from '../utils/cloudflare.js'
 import { getWebRequest } from '../utils/web-request.js'
 import { createShortUrl, cleanOldUrls } from '../utils/database.js'
@@ -41,7 +40,6 @@ export default defineEventHandler(async (event) => {
       const shortId = generateShortId(6)
       await createShortUrl(db, shortId, originalUrl)
 
-      // Hapus URL usang (> 30 hari) di latar belakang secara otomatis
       if (event.context.cloudflare?.context) {
          event.context.cloudflare.context.waitUntil(cleanOldUrls(db, 30))
       }

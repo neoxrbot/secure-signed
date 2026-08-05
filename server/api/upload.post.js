@@ -1,4 +1,3 @@
-// server/api/upload.post.js
 import { getCloudflareEnv } from '../utils/cloudflare.js'
 import { getWebRequest } from '../utils/web-request.js'
 import { recordHit } from '../utils/database.js'
@@ -44,7 +43,6 @@ export default defineEventHandler(async (event) => {
 
    try {
       const formData = await request.formData()
-      // Mendukung input 'file' atau 'files'
       const file = formData.get('file') || formData.get('files')
 
       if (!file || !(file instanceof File)) {
@@ -104,13 +102,11 @@ export default defineEventHandler(async (event) => {
          }), { status: 500, headers: { 'Content-Type': 'application/json' } })
       }
 
-      // Catat statistik agregat ke D1
       await recordHit(db, {
          'stats:total_files': 1,
          'stats:total_files_size': file.size
       })
 
-      // Output JSON persis sesuai format yang Anda Minta
       return new Response(JSON.stringify({
          creator: appConfig.watermark.creator,
          status: true,

@@ -134,7 +134,7 @@ const emit = defineEmits(['edit', 'delete', 'page-change', 'per-page-change', 'r
 
 const searchQuery = ref('')
 
-const totalPages = computed(() => Math.max(Math.ceil((props.totalNotes || 0) / (props.perPage || 10)), 1))
+const totalPages = computed(() => Math.max(Math.ceil((props.totalNotes || 0) / (props.perPage || 5)), 1))
 
 const displayNotes = computed(() => {
    if (!searchQuery.value.trim()) return props.notes || []

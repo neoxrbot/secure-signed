@@ -1,4 +1,3 @@
-// server/routes/token/[token].get.js
 import { getCloudflareEnv } from '../../utils/cloudflare.js'
 import { getSignedCdn, recordCdnDownload, cleanExpiredCdn } from '../../utils/database.js'
 
@@ -34,12 +33,10 @@ export default defineEventHandler(async (event) => {
       const record = await getSignedCdn(db, token)
       if (!record) return new Response('Invalid or unknown CDN token', { status: 404 })
 
-      // === PERBAIKAN TIMESTAMP (Detik) ===
       const nowInSeconds = Math.floor(Date.now() / 1000)
       const expiredAt = record.expired_at > 1e11 ? Math.floor(record.expired_at / 1000) : record.expired_at
 
       if (nowInSeconds > expiredAt) {
-         // Hapus token expired secara otomatis di background
          event.waitUntil(cleanExpiredCdn(db))
          return new Response('CDN link has expired', { status: 410 })
       }
@@ -52,7 +49,6 @@ export default defineEventHandler(async (event) => {
          } catch (e) { }
       }
 
-      // Forward Range header so resumable / partial downloads work
       const incomingHeaders = event.node?.req?.headers
          || Object.fromEntries(new Headers(event.web?.request?.headers))
       if (incomingHeaders.range) {
@@ -69,14 +65,11 @@ export default defineEventHandler(async (event) => {
          return new Response('File size exceeds allowed signed limit', { status: 413 })
       }
 
-      // Don't block the response stream on the DB write — record in background
       event.waitUntil(recordCdnDownload(db, token, contentLength))
 
       const outHeaders = new Headers(upstreamRes.headers)
       outHeaders.set('Access-Control-Allow-Origin', '*')
 
-      // Prevent stalls/truncation: content-length from upstream can refer to the
-      // compressed body, while fetch() may already hand us the decoded stream.
       outHeaders.delete('content-encoding')
       outHeaders.delete('content-length')
       outHeaders.delete('transfer-encoding')
