@@ -630,7 +630,7 @@ onUnmounted(() => {
    padding: 0.75rem 1rem;
    margin: 0.5rem 0;
    gap: 0.75rem;
-   flex-wrap: wrap;
+   flex-wrap: nowrap !important;
 }
 
 .markdown-body :deep(.file-download-box .file-info) {
@@ -638,6 +638,12 @@ onUnmounted(() => {
    align-items: center;
    gap: 0.75rem;
    min-width: 0;
+   flex: 1 1 auto;
+}
+
+.markdown-body :deep(.file-download-box .file-text-col) {
+   min-width: 0;
+   flex: 1 1 auto;
 }
 
 .markdown-body :deep(.file-download-box .file-icon) {
@@ -652,6 +658,7 @@ onUnmounted(() => {
    justify-content: center;
    color: var(--app-accent-color);
    font-size: 1.1rem;
+   flex-shrink: 0;
 }
 
 .markdown-body :deep(.file-download-box .file-name) {
@@ -661,6 +668,8 @@ onUnmounted(() => {
    white-space: nowrap;
    overflow: hidden;
    text-overflow: ellipsis;
+   max-width: 100%;
+   display: block;
 }
 
 .markdown-body :deep(.file-download-box .file-size) {
@@ -681,6 +690,8 @@ onUnmounted(() => {
    border-radius: 0.375rem;
    text-decoration: none;
    transition: all 0.2s ease;
+   flex-shrink: 0 !important;
+   white-space: nowrap;
 }
 
 .markdown-body :deep(.file-download-box .btn-download:hover) {

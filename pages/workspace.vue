@@ -21,7 +21,8 @@
                      <div class="editor-badge"><i class="bi bi-pencil-square"></i></div>
                      <div>
                         <h6 class="editor-title mb-0">{{ form.id ? 'Edit Note' : 'Create New Note' }}</h6>
-                        <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write content' }}</span>
+                        <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write content'
+                           }}</span>
                      </div>
                   </div>
                   <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
@@ -33,23 +34,42 @@
                   <form @submit.prevent="saveNote">
                      <div class="mb-3">
                         <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Title</label>
-                        <input v-model="form.title" class="form-control" placeholder="Enter note title..." required :disabled="loading || isUploadingPhoto">
+                        <input v-model="form.title" class="form-control" placeholder="Enter note title..." required
+                           :disabled="loading || isUploadingPhoto">
                      </div>
 
                      <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                           <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Content</label>
+                           <label
+                              class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Content</label>
                            <div class="toolbar d-flex align-items-center gap-1">
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')" title="Bold" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-type-bold"></i></button>
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')" title="Italic" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-type-italic"></i></button>
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="insertAtCursor('\n- ')" title="List" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-list-ul"></i></button>
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')" title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-code"></i></button>
-                              
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="mediaInput?.click()" title="Upload Media (Image/Video/Audio)" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-film"></i></button>
-                              <input ref="mediaInput" type="file" class="d-none" accept="image/*,video/*,audio/*" multiple @change="uploadMediaFiles" :disabled="isUploadingPhoto || isPreview">
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')"
+                                 title="Bold" :disabled="loading || isUploadingPhoto || isPreview"><i
+                                    class="bi bi-type-bold"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')"
+                                 title="Italic" :disabled="loading || isUploadingPhoto || isPreview"><i
+                                    class="bi bi-type-italic"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary"
+                                 @click="insertAtCursor('\n- ')" title="List"
+                                 :disabled="loading || isUploadingPhoto || isPreview"><i
+                                    class="bi bi-list-ul"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')"
+                                 title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i
+                                    class="bi bi-code"></i></button>
 
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="fileInput?.click()" title="Attach File (All Extensions)" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-paperclip"></i></button>
-                              <input ref="fileInput" type="file" class="d-none" accept="*/*" multiple @change="uploadAttachmentFiles" :disabled="isUploadingPhoto || isPreview">
+                              <button type="button" class="btn btn-xs btn-outline-secondary"
+                                 @click="mediaInput?.click()" title="Upload Media (Image/Video/Audio)"
+                                 :disabled="loading || isUploadingPhoto || isPreview"><i
+                                    class="bi bi-film"></i></button>
+                              <input ref="mediaInput" type="file" class="d-none" accept="image/*,video/*,audio/*"
+                                 multiple @change="uploadMediaFiles" :disabled="isUploadingPhoto || isPreview">
+
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="fileInput?.click()"
+                                 title="Attach File (All Extensions)"
+                                 :disabled="loading || isUploadingPhoto || isPreview"><i
+                                    class="bi bi-paperclip"></i></button>
+                              <input ref="fileInput" type="file" class="d-none" accept="*/*" multiple
+                                 @change="uploadAttachmentFiles" :disabled="isUploadingPhoto || isPreview">
                            </div>
                         </div>
 
@@ -58,27 +78,37 @@
                               <div v-if="previewHtml" class="markdown-body" v-html="previewHtml"></div>
                               <span v-else class="text-muted fs-xs italic">Nothing to preview...</span>
                            </div>
-                           <textarea v-else ref="editor" v-model="form.content" class="form-control note-textarea" rows="11" placeholder="Write content here..." required :disabled="loading || isUploadingPhoto"></textarea>
-                           <div v-if="isUploadingPhoto" class="upload-overlay d-flex flex-column align-items-center justify-content-center">
+                           <textarea v-else ref="editor" v-model="form.content" class="form-control note-textarea"
+                              rows="11" placeholder="Write content here..." required
+                              :disabled="loading || isUploadingPhoto"></textarea>
+                           <div v-if="isUploadingPhoto"
+                              class="upload-overlay d-flex flex-column align-items-center justify-content-center">
                               <div class="spinner-border spinner-border-sm text-accent mb-2" role="status"></div>
-                              <span class="fs-xs fw-semibold text-color">{{ uploadProgressText || 'Uploading...' }}</span>
+                              <span class="fs-xs fw-semibold text-color">{{ uploadProgressText || 'Uploading...'
+                                 }}</span>
                            </div>
                         </div>
                      </div>
 
                      <div class="d-flex align-items-center gap-4 mb-4">
                         <div class="form-check form-switch mb-0">
-                           <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox" :disabled="loading || isUploadingPhoto">
-                           <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private</label>
+                           <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox"
+                              :disabled="loading || isUploadingPhoto">
+                           <label class="form-check-label fs-sm text-color fw-semibold"
+                              for="privateSwitch">Private</label>
                         </div>
                         <div class="form-check form-switch mb-0">
-                           <input id="previewSwitch" v-model="isPreview" class="form-check-input" type="checkbox" :disabled="loading || isUploadingPhoto">
-                           <label class="form-check-label fs-sm text-color fw-semibold" for="previewSwitch">Preview</label>
+                           <input id="previewSwitch" v-model="isPreview" class="form-check-input" type="checkbox"
+                              :disabled="loading || isUploadingPhoto">
+                           <label class="form-check-label fs-sm text-color fw-semibold"
+                              for="previewSwitch">Preview</label>
                         </div>
                      </div>
 
                      <div class="d-flex gap-2">
-                        <button class="btn btn-custom-accent py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2" :disabled="loading || isUploadingPhoto">
+                        <button
+                           class="btn btn-custom-accent py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2"
+                           :disabled="loading || isUploadingPhoto">
                            <span v-if="loading" class="spinner-border spinner-border-sm"></span>
                            <i v-else class="bi bi-check-circle-fill"></i>
                            <span>{{ form.id ? 'Update Article' : 'Publish Article' }}</span>
@@ -90,7 +120,9 @@
          </div>
 
          <div class="col-lg-5">
-            <NotesManagement :notes="notes" :page="page" :per-page="perPage" :total-notes="totalNotes" :loading="loading" :active-edit-id="form.id" @edit="editNote" @delete="removeNote" @page-change="goToPage" @per-page-change="handlePerPageChange" @refresh="fetchNotes" />
+            <NotesManagement :notes="notes" :page="page" :per-page="perPage" :total-notes="totalNotes"
+               :loading="loading" :active-edit-id="form.id" @edit="editNote" @delete="removeNote"
+               @page-change="goToPage" @per-page-change="handlePerPageChange" @refresh="fetchNotes" />
          </div>
       </div>
       <Alert type="danger mt-3" :show="!!error">{{ error }}</Alert>
@@ -446,7 +478,7 @@ const uploadAttachmentFiles = async (ev) => {
          const r = await $fetch('/api/upload', { method: 'POST', body: fd })
          const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
          const sizeStr = formatBytes(file.size)
-         const tag = `\n<div class="file-download-box"><div class="file-info"><div class="file-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div><div><div class="file-name">${file.name}</div><div class="file-size">${sizeStr}</div></div></div><a href="${relativeUrl}" download="${file.name}" class="btn-download"><i class="bi bi-download"></i> Download</a></div>\n`
+         const tag = `\n<div class="file-download-box"><div class="file-info"><div class="file-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div><div class="file-text-col"><div class="file-name">${file.name}</div><div class="file-size">${sizeStr}</div></div></div><a href="${relativeUrl}" download="${file.name}" class="btn-download"><i class="bi bi-download"></i> Download</a></div>\n`
          insertAtCursor(tag)
       }
    } catch (e) {
@@ -751,7 +783,7 @@ onUnmounted(() => {
    padding: 0.75rem 1rem;
    margin: 0.5rem 0;
    gap: 0.75rem;
-   flex-wrap: wrap;
+   flex-wrap: nowrap !important;
 }
 
 .markdown-body :deep(.file-download-box .file-info) {
@@ -759,6 +791,12 @@ onUnmounted(() => {
    align-items: center;
    gap: 0.75rem;
    min-width: 0;
+   flex: 1 1 auto;
+}
+
+.markdown-body :deep(.file-download-box .file-text-col) {
+   min-width: 0;
+   flex: 1 1 auto;
 }
 
 .markdown-body :deep(.file-download-box .file-icon) {
@@ -773,6 +811,7 @@ onUnmounted(() => {
    justify-content: center;
    color: var(--app-accent-color);
    font-size: 1.1rem;
+   flex-shrink: 0;
 }
 
 .markdown-body :deep(.file-download-box .file-name) {
@@ -782,6 +821,8 @@ onUnmounted(() => {
    white-space: nowrap;
    overflow: hidden;
    text-overflow: ellipsis;
+   max-width: 100%;
+   display: block;
 }
 
 .markdown-body :deep(.file-download-box .file-size) {
@@ -802,6 +843,8 @@ onUnmounted(() => {
    border-radius: 0.375rem;
    text-decoration: none;
    transition: all 0.2s ease;
+   flex-shrink: 0 !important;
+   white-space: nowrap;
 }
 
 .markdown-body :deep(.file-download-box .btn-download:hover) {
