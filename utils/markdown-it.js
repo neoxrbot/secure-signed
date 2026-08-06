@@ -86,7 +86,7 @@ export default class MarkdownIt {
             continue
          }
 
-         if (this.options.html && /^<(div|video|audio|section|article)\b/i.test(trimmed)) {
+         if (this.options.html && /^<\/?(div|video|audio|section|article)\b/i.test(trimmed)) {
             closeList()
             html += `${trimmed}\n`
             continue

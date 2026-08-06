@@ -21,8 +21,7 @@
                      <div class="editor-badge"><i class="bi bi-pencil-square"></i></div>
                      <div>
                         <h6 class="editor-title mb-0">{{ form.id ? 'Edit Note' : 'Create New Note' }}</h6>
-                        <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write content'
-                           }}</span>
+                        <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write content' }}</span>
                      </div>
                   </div>
                   <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
@@ -34,42 +33,23 @@
                   <form @submit.prevent="saveNote">
                      <div class="mb-3">
                         <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Title</label>
-                        <input v-model="form.title" class="form-control" placeholder="Enter note title..." required
-                           :disabled="loading || isUploadingPhoto">
+                        <input v-model="form.title" class="form-control" placeholder="Enter note title..." required :disabled="loading || isUploadingPhoto">
                      </div>
 
                      <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                           <label
-                              class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Content</label>
+                           <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Content</label>
                            <div class="toolbar d-flex align-items-center gap-1">
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')"
-                                 title="Bold" :disabled="loading || isUploadingPhoto || isPreview"><i
-                                    class="bi bi-type-bold"></i></button>
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')"
-                                 title="Italic" :disabled="loading || isUploadingPhoto || isPreview"><i
-                                    class="bi bi-type-italic"></i></button>
-                              <button type="button" class="btn btn-xs btn-outline-secondary"
-                                 @click="insertAtCursor('\n- ')" title="List"
-                                 :disabled="loading || isUploadingPhoto || isPreview"><i
-                                    class="bi bi-list-ul"></i></button>
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')"
-                                 title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i
-                                    class="bi bi-code"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')" title="Bold" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-type-bold"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')" title="Italic" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-type-italic"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="insertAtCursor('\n- ')" title="List" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-list-ul"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')" title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-code"></i></button>
+                              
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="mediaInput?.click()" title="Upload Media (Image/Video/Audio)" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-film"></i></button>
+                              <input ref="mediaInput" type="file" class="d-none" accept="image/*,video/*,audio/*" multiple @change="uploadMediaFiles" :disabled="isUploadingPhoto || isPreview">
 
-                              <button type="button" class="btn btn-xs btn-outline-secondary"
-                                 @click="mediaInput?.click()" title="Upload Media (Image/Video/Audio)"
-                                 :disabled="loading || isUploadingPhoto || isPreview"><i
-                                    class="bi bi-film"></i></button>
-                              <input ref="mediaInput" type="file" class="d-none" accept="image/*,video/*,audio/*"
-                                 multiple @change="uploadMediaFiles" :disabled="isUploadingPhoto || isPreview">
-
-                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="fileInput?.click()"
-                                 title="Attach File (All Extensions)"
-                                 :disabled="loading || isUploadingPhoto || isPreview"><i
-                                    class="bi bi-paperclip"></i></button>
-                              <input ref="fileInput" type="file" class="d-none" accept="*/*" multiple
-                                 @change="uploadAttachmentFiles" :disabled="isUploadingPhoto || isPreview">
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="fileInput?.click()" title="Attach File (All Extensions)" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-paperclip"></i></button>
+                              <input ref="fileInput" type="file" class="d-none" accept="*/*" multiple @change="uploadAttachmentFiles" :disabled="isUploadingPhoto || isPreview">
                            </div>
                         </div>
 
@@ -78,37 +58,27 @@
                               <div v-if="previewHtml" class="markdown-body" v-html="previewHtml"></div>
                               <span v-else class="text-muted fs-xs italic">Nothing to preview...</span>
                            </div>
-                           <textarea v-else ref="editor" v-model="form.content" class="form-control note-textarea"
-                              rows="11" placeholder="Write content here..." required
-                              :disabled="loading || isUploadingPhoto"></textarea>
-                           <div v-if="isUploadingPhoto"
-                              class="upload-overlay d-flex flex-column align-items-center justify-content-center">
+                           <textarea v-else ref="editor" v-model="form.content" class="form-control note-textarea" rows="11" placeholder="Write content here..." required :disabled="loading || isUploadingPhoto"></textarea>
+                           <div v-if="isUploadingPhoto" class="upload-overlay d-flex flex-column align-items-center justify-content-center">
                               <div class="spinner-border spinner-border-sm text-accent mb-2" role="status"></div>
-                              <span class="fs-xs fw-semibold text-color">{{ uploadProgressText || 'Uploading...'
-                                 }}</span>
+                              <span class="fs-xs fw-semibold text-color">{{ uploadProgressText || 'Uploading...' }}</span>
                            </div>
                         </div>
                      </div>
 
                      <div class="d-flex align-items-center gap-4 mb-4">
                         <div class="form-check form-switch mb-0">
-                           <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox"
-                              :disabled="loading || isUploadingPhoto">
-                           <label class="form-check-label fs-sm text-color fw-semibold"
-                              for="privateSwitch">Private</label>
+                           <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox" :disabled="loading || isUploadingPhoto">
+                           <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private</label>
                         </div>
                         <div class="form-check form-switch mb-0">
-                           <input id="previewSwitch" v-model="isPreview" class="form-check-input" type="checkbox"
-                              :disabled="loading || isUploadingPhoto">
-                           <label class="form-check-label fs-sm text-color fw-semibold"
-                              for="previewSwitch">Preview</label>
+                           <input id="previewSwitch" v-model="isPreview" class="form-check-input" type="checkbox" :disabled="loading || isUploadingPhoto">
+                           <label class="form-check-label fs-sm text-color fw-semibold" for="previewSwitch">Preview</label>
                         </div>
                      </div>
 
                      <div class="d-flex gap-2">
-                        <button
-                           class="btn btn-custom-accent py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2"
-                           :disabled="loading || isUploadingPhoto">
+                        <button class="btn btn-custom-accent py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2" :disabled="loading || isUploadingPhoto">
                            <span v-if="loading" class="spinner-border spinner-border-sm"></span>
                            <i v-else class="bi bi-check-circle-fill"></i>
                            <span>{{ form.id ? 'Update Article' : 'Publish Article' }}</span>
@@ -120,17 +90,35 @@
          </div>
 
          <div class="col-lg-5">
-            <NotesManagement :notes="notes" :page="page" :per-page="perPage" :total-notes="totalNotes"
-               :loading="loading" :active-edit-id="form.id" @edit="editNote" @delete="removeNote"
-               @page-change="goToPage" @per-page-change="handlePerPageChange" @refresh="fetchNotes" />
+            <NotesManagement :notes="notes" :page="page" :per-page="perPage" :total-notes="totalNotes" :loading="loading" :active-edit-id="form.id" @edit="editNote" @delete="removeNote" @page-change="goToPage" @per-page-change="handlePerPageChange" @refresh="fetchNotes" />
          </div>
       </div>
       <Alert type="danger mt-3" :show="!!error">{{ error }}</Alert>
+
+      <Transition name="fade">
+         <div v-if="lightbox.isOpen" class="lightbox-overlay" @click.self="closeLightbox">
+            <button class="btn-close-lightbox" @click="closeLightbox">
+               <i class="bi bi-x-lg"></i>
+            </button>
+            <button v-if="hasMultipleImages" class="nav-btn prev" @click="prevImage">
+               <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="lightbox-content" @click.self="closeLightbox">
+               <img :src="lightbox.currentImage" class="img-original-ratio rounded-3" @contextmenu.prevent>
+            </div>
+            <button v-if="hasMultipleImages" class="nav-btn next" @click="nextImage">
+               <i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="lightbox-counter text-white fw-bold">
+               {{ currentIndex + 1 }} / {{ lightbox.images.length }}
+            </div>
+         </div>
+      </Transition>
    </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, reactive, onMounted, onUnmounted } from 'vue'
 import { useNuxtApp, useRouter, useState, useHead } from '#app'
 import MarkdownIt from '@/utils/markdown-it'
 import Prism from 'prismjs'
@@ -161,6 +149,47 @@ const form = ref({ id: '', title: '', content: '', is_private: true })
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
+const lightbox = reactive({
+   isOpen: false,
+   currentImage: '',
+   images: []
+})
+
+const currentIndex = computed(() => lightbox.images.indexOf(lightbox.currentImage))
+const hasMultipleImages = computed(() => lightbox.images.length > 1)
+
+const openLightbox = (url, allImgList = []) => {
+   lightbox.currentImage = url
+   lightbox.images = allImgList.length ? allImgList : [url]
+   lightbox.isOpen = true
+   if (typeof document !== 'undefined') document.body.style.overflow = 'hidden'
+}
+
+const closeLightbox = () => {
+   lightbox.isOpen = false
+   if (typeof document !== 'undefined') document.body.style.overflow = ''
+}
+
+const nextImage = () => {
+   if (!lightbox.images.length) return
+   const nextIdx = (currentIndex.value + 1) % lightbox.images.length
+   lightbox.currentImage = lightbox.images[nextIdx]
+}
+
+const prevImage = () => {
+   if (!lightbox.images.length) return
+   const prevIdx = (currentIndex.value - 1 + lightbox.images.length) % lightbox.images.length
+   lightbox.currentImage = lightbox.images[prevIdx]
+}
+
+const handleKeydown = (e) => {
+   if (e.key === 'Escape') closeLightbox()
+   if (lightbox.isOpen) {
+      if (e.key === 'ArrowRight') nextImage()
+      if (e.key === 'ArrowLeft') prevImage()
+   }
+}
+
 const previewHtml = computed(() => {
    let text = form.value.content || ''
    if (!text.trim()) return ''
@@ -176,6 +205,32 @@ const formatBytes = (bytes, decimals = 2) => {
    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
    const i = Math.floor(Math.log(bytes) / Math.log(k))
    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
+const setupImageLightbox = async () => {
+   await nextTick()
+   if (typeof window === 'undefined') return
+   const container = document.querySelector('.markdown-body')
+   if (!container) return
+
+   const imgs = Array.from(container.querySelectorAll('img'))
+   const imgUrls = imgs.map(img => img.src).filter(Boolean)
+
+   imgs.forEach(img => {
+      if (!img.dataset.lightboxSetup) {
+         img.dataset.lightboxSetup = 'true'
+         img.style.cursor = 'pointer'
+         img.addEventListener('click', () => {
+            const gallery = img.closest('.gallery-grid')
+            if (gallery) {
+               const galleryImgs = Array.from(gallery.querySelectorAll('img')).map(i => i.src)
+               openLightbox(img.src, galleryImgs)
+            } else {
+               openLightbox(img.src, imgUrls)
+            }
+         })
+      }
+   })
 }
 
 const initPlyr = async () => {
@@ -207,6 +262,7 @@ watch([isPreview, previewHtml], async () => {
       if (typeof window !== 'undefined') {
          Prism.highlightAll()
          initPlyr()
+         setupImageLightbox()
       }
    }
 })
@@ -322,18 +378,16 @@ const buildGalleryHtml = (images) => {
    const side = images.slice(1, 5)
    const extra = images.length - 5
 
-   let html = `\n<div class="product-grid-gallery">\n`
-   html += `  <div class="grid-item item-main"><img src="${main.url}" alt="${main.name}"></div>\n`
+   let html = '<div class="gallery-grid">'
+   html += `<div class="grid-item item-main"><img src="${main.url}" alt="${main.name}"></div>`
    side.forEach((img, idx) => {
       const isLast = idx === side.length - 1 && extra > 0
-      html += `  <div class="grid-item"><img src="${img.url}" alt="${img.name}">`
-      if (isLast) {
-         html += `<div class="more-overlay">+${extra} Foto</div>`
-      }
-      html += `</div>\n`
+      html += `<div class="grid-item"><img src="${img.url}" alt="${img.name}">`
+      if (isLast) html += `<div class="more-overlay">+${extra} Foto</div>`
+      html += `</div>`
    })
-   html += `</div>\n`
-   return html
+   html += '</div>'
+   return `\n${html}\n`
 }
 
 const uploadMediaFiles = async (ev) => {
@@ -404,7 +458,14 @@ const uploadAttachmentFiles = async (ev) => {
    }
 }
 
-onMounted(check)
+onMounted(() => {
+   check()
+   if (typeof window !== 'undefined') window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+   if (typeof window !== 'undefined') window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>
@@ -626,7 +687,7 @@ onMounted(check)
    margin: 0 !important;
 }
 
-.markdown-body :deep(.product-grid-gallery) {
+.markdown-body :deep(.gallery-grid) {
    display: grid;
    grid-template-columns: repeat(4, 1fr);
    grid-template-rows: repeat(2, 110px);
@@ -637,7 +698,7 @@ onMounted(check)
    overflow: hidden;
 }
 
-.markdown-body :deep(.product-grid-gallery .grid-item) {
+.markdown-body :deep(.gallery-grid .grid-item) {
    position: relative;
    overflow: hidden;
    border-radius: 0.375rem;
@@ -645,12 +706,12 @@ onMounted(check)
    border: 1px solid var(--app-border-color);
 }
 
-.markdown-body :deep(.product-grid-gallery .item-main) {
+.markdown-body :deep(.gallery-grid .item-main) {
    grid-column: span 2;
    grid-row: span 2;
 }
 
-.markdown-body :deep(.product-grid-gallery .grid-item img) {
+.markdown-body :deep(.gallery-grid .grid-item img) {
    width: 100% !important;
    height: 100% !important;
    object-fit: cover !important;
@@ -660,7 +721,7 @@ onMounted(check)
    display: block;
 }
 
-.markdown-body :deep(.product-grid-gallery .more-overlay) {
+.markdown-body :deep(.gallery-grid .more-overlay) {
    position: absolute;
    inset: 0;
    background-color: rgba(0, 0, 0, 0.65);
@@ -674,7 +735,7 @@ onMounted(check)
 }
 
 @media (max-width: 576px) {
-   .markdown-body :deep(.product-grid-gallery) {
+   .markdown-body :deep(.gallery-grid) {
       grid-template-columns: repeat(2, 1fr);
       grid-template-rows: repeat(2, 100px);
    }
@@ -808,5 +869,107 @@ onMounted(check)
 .markdown-body :deep(.plyr__control:hover:not(.plyr__control--overlaid)) {
    background: var(--app-bg) !important;
    color: var(--app-accent-color) !important;
+}
+
+.lightbox-overlay {
+   position: fixed;
+   inset: 0;
+   z-index: 9999;
+   background-color: rgba(0, 0, 0, 0.88);
+   backdrop-filter: blur(8px);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.btn-close-lightbox {
+   position: absolute;
+   top: 1.25rem;
+   right: 1.25rem;
+   background: rgba(255, 255, 255, 0.12);
+   border: 1px solid rgba(255, 255, 255, 0.2);
+   color: #fff;
+   width: 40px;
+   height: 40px;
+   border-radius: 50%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 1.1rem;
+   cursor: pointer;
+   z-index: 10000;
+   transition: all 0.2s ease;
+}
+
+.btn-close-lightbox:hover {
+   background: rgba(255, 255, 255, 0.25);
+}
+
+.nav-btn {
+   position: absolute;
+   top: 50%;
+   transform: translateY(-50%);
+   background: rgba(255, 255, 255, 0.12);
+   border: 1px solid rgba(255, 255, 255, 0.2);
+   color: #fff;
+   width: 44px;
+   height: 44px;
+   border-radius: 50%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 1.25rem;
+   cursor: pointer;
+   z-index: 10000;
+   transition: all 0.2s ease;
+}
+
+.nav-btn.prev {
+   left: 1.25rem;
+}
+
+.nav-btn.next {
+   right: 1.25rem;
+}
+
+.nav-btn:hover {
+   background: rgba(255, 255, 255, 0.25);
+}
+
+.lightbox-content {
+   max-width: 90vw;
+   max-height: 85vh;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.img-original-ratio {
+   max-width: 100%;
+   max-height: 85vh;
+   object-fit: contain;
+   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-counter {
+   position: absolute;
+   bottom: 1.25rem;
+   left: 50%;
+   transform: translateX(-50%);
+   font-size: 0.85rem;
+   background: rgba(0, 0, 0, 0.5);
+   padding: 0.35rem 0.85rem;
+   border-radius: 50px;
+   border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+   transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+   opacity: 0;
 }
 </style>

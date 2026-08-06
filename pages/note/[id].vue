@@ -70,12 +70,32 @@
             </article>
          </div>
       </div>
+
+      <Transition name="fade">
+         <div v-if="lightbox.isOpen" class="lightbox-overlay" @click.self="closeLightbox">
+            <button class="btn-close-lightbox" @click="closeLightbox">
+               <i class="bi bi-x-lg"></i>
+            </button>
+            <button v-if="hasMultipleImages" class="nav-btn prev" @click="prevImage">
+               <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="lightbox-content" @click.self="closeLightbox">
+               <img :src="lightbox.currentImage" class="img-original-ratio rounded-3" @contextmenu.prevent>
+            </div>
+            <button v-if="hasMultipleImages" class="nav-btn next" @click="nextImage">
+               <i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="lightbox-counter text-white fw-bold">
+               {{ currentIndex + 1 }} / {{ lightbox.images.length }}
+            </div>
+         </div>
+      </Transition>
    </div>
 </template>
 
 <script setup>
 import MarkdownIt from '@/utils/markdown-it'
-import { computed, onMounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, nextTick, reactive } from 'vue'
 import { useRoute, useRouter, useNuxtApp, useHead } from '#app'
 
 import Prism from 'prismjs'
@@ -95,6 +115,47 @@ const copyStatus = ref('Share')
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
+const lightbox = reactive({
+   isOpen: false,
+   currentImage: '',
+   images: []
+})
+
+const currentIndex = computed(() => lightbox.images.indexOf(lightbox.currentImage))
+const hasMultipleImages = computed(() => lightbox.images.length > 1)
+
+const openLightbox = (url, allImgList = []) => {
+   lightbox.currentImage = url
+   lightbox.images = allImgList.length ? allImgList : [url]
+   lightbox.isOpen = true
+   if (typeof document !== 'undefined') document.body.style.overflow = 'hidden'
+}
+
+const closeLightbox = () => {
+   lightbox.isOpen = false
+   if (typeof document !== 'undefined') document.body.style.overflow = ''
+}
+
+const nextImage = () => {
+   if (!lightbox.images.length) return
+   const nextIdx = (currentIndex.value + 1) % lightbox.images.length
+   lightbox.currentImage = lightbox.images[nextIdx]
+}
+
+const prevImage = () => {
+   if (!lightbox.images.length) return
+   const prevIdx = (currentIndex.value - 1 + lightbox.images.length) % lightbox.images.length
+   lightbox.currentImage = lightbox.images[prevIdx]
+}
+
+const handleKeydown = (e) => {
+   if (e.key === 'Escape') closeLightbox()
+   if (lightbox.isOpen) {
+      if (e.key === 'ArrowRight') nextImage()
+      if (e.key === 'ArrowLeft') prevImage()
+   }
+}
+
 const cleanContent = computed(() => {
    let text = note.value.content || ''
    text = text.replace(/[\u2010-\u2015\u2212]/g, '-')
@@ -102,6 +163,32 @@ const cleanContent = computed(() => {
 })
 
 const html = computed(() => md.render(cleanContent.value))
+
+const setupImageLightbox = async () => {
+   await nextTick()
+   if (typeof window === 'undefined') return
+   const container = document.querySelector('.markdown-body')
+   if (!container) return
+
+   const imgs = Array.from(container.querySelectorAll('img'))
+   const imgUrls = imgs.map(img => img.src).filter(Boolean)
+
+   imgs.forEach(img => {
+      if (!img.dataset.lightboxSetup) {
+         img.dataset.lightboxSetup = 'true'
+         img.style.cursor = 'pointer'
+         img.addEventListener('click', () => {
+            const gallery = img.closest('.gallery-grid')
+            if (gallery) {
+               const galleryImgs = Array.from(gallery.querySelectorAll('img')).map(i => i.src)
+               openLightbox(img.src, galleryImgs)
+            } else {
+               openLightbox(img.src, imgUrls)
+            }
+         })
+      }
+   })
+}
 
 const initPlyr = async () => {
    await nextTick()
@@ -131,6 +218,7 @@ watch(html, async () => {
    if (typeof window !== 'undefined') {
       Prism.highlightAll()
       initPlyr()
+      setupImageLightbox()
    }
 })
 
@@ -196,6 +284,7 @@ const formatDate = (v) => {
 }
 
 onMounted(async () => {
+   if (typeof window !== 'undefined') window.addEventListener('keydown', handleKeydown)
    try {
       const r = await $api(`/api/notes/${route.params.id}`)
       note.value = r.data
@@ -203,12 +292,17 @@ onMounted(async () => {
       if (typeof window !== 'undefined') {
          Prism.highlightAll()
          initPlyr()
+         setupImageLightbox()
       }
    } catch (e) {
       error.value = e.data?.message || 'Note not found or private'
    } finally {
       pending.value = false
    }
+})
+
+onUnmounted(() => {
+   if (typeof window !== 'undefined') window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
@@ -472,7 +566,7 @@ onMounted(async () => {
    margin: 0 !important;
 }
 
-.markdown-body :deep(.product-grid-gallery) {
+.markdown-body :deep(.gallery-grid) {
    display: grid;
    grid-template-columns: repeat(4, 1fr);
    grid-template-rows: repeat(2, 110px);
@@ -483,7 +577,7 @@ onMounted(async () => {
    overflow: hidden;
 }
 
-.markdown-body :deep(.product-grid-gallery .grid-item) {
+.markdown-body :deep(.gallery-grid .grid-item) {
    position: relative;
    overflow: hidden;
    border-radius: 0.375rem;
@@ -491,12 +585,12 @@ onMounted(async () => {
    border: 1px solid var(--app-border-color);
 }
 
-.markdown-body :deep(.product-grid-gallery .item-main) {
+.markdown-body :deep(.gallery-grid .item-main) {
    grid-column: span 2;
    grid-row: span 2;
 }
 
-.markdown-body :deep(.product-grid-gallery .grid-item img) {
+.markdown-body :deep(.gallery-grid .grid-item img) {
    width: 100% !important;
    height: 100% !important;
    object-fit: cover !important;
@@ -506,7 +600,7 @@ onMounted(async () => {
    display: block;
 }
 
-.markdown-body :deep(.product-grid-gallery .more-overlay) {
+.markdown-body :deep(.gallery-grid .more-overlay) {
    position: absolute;
    inset: 0;
    background-color: rgba(0, 0, 0, 0.65);
@@ -520,7 +614,7 @@ onMounted(async () => {
 }
 
 @media (max-width: 576px) {
-   .markdown-body :deep(.product-grid-gallery) {
+   .markdown-body :deep(.gallery-grid) {
       grid-template-columns: repeat(2, 1fr);
       grid-template-rows: repeat(2, 100px);
    }
@@ -654,5 +748,107 @@ onMounted(async () => {
 .markdown-body :deep(.plyr__control:hover:not(.plyr__control--overlaid)) {
    background: var(--app-bg) !important;
    color: var(--app-accent-color) !important;
+}
+
+.lightbox-overlay {
+   position: fixed;
+   inset: 0;
+   z-index: 9999;
+   background-color: rgba(0, 0, 0, 0.88);
+   backdrop-filter: blur(8px);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.btn-close-lightbox {
+   position: absolute;
+   top: 1.25rem;
+   right: 1.25rem;
+   background: rgba(255, 255, 255, 0.12);
+   border: 1px solid rgba(255, 255, 255, 0.2);
+   color: #fff;
+   width: 40px;
+   height: 40px;
+   border-radius: 50%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 1.1rem;
+   cursor: pointer;
+   z-index: 10000;
+   transition: all 0.2s ease;
+}
+
+.btn-close-lightbox:hover {
+   background: rgba(255, 255, 255, 0.25);
+}
+
+.nav-btn {
+   position: absolute;
+   top: 50%;
+   transform: translateY(-50%);
+   background: rgba(255, 255, 255, 0.12);
+   border: 1px solid rgba(255, 255, 255, 0.2);
+   color: #fff;
+   width: 44px;
+   height: 44px;
+   border-radius: 50%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 1.25rem;
+   cursor: pointer;
+   z-index: 10000;
+   transition: all 0.2s ease;
+}
+
+.nav-btn.prev {
+   left: 1.25rem;
+}
+
+.nav-btn.next {
+   right: 1.25rem;
+}
+
+.nav-btn:hover {
+   background: rgba(255, 255, 255, 0.25);
+}
+
+.lightbox-content {
+   max-width: 90vw;
+   max-height: 85vh;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.img-original-ratio {
+   max-width: 100%;
+   max-height: 85vh;
+   object-fit: contain;
+   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-counter {
+   position: absolute;
+   bottom: 1.25rem;
+   left: 50%;
+   transform: translateX(-50%);
+   font-size: 0.85rem;
+   background: rgba(0, 0, 0, 0.5);
+   padding: 0.35rem 0.85rem;
+   border-radius: 50px;
+   border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+   transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+   opacity: 0;
 }
 </style>
