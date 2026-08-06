@@ -15,6 +15,7 @@ const processInline = (input, allowHtml = true) => {
       text = text.replace(/<a\s+([\s\S]*?)>([\s\S]*?)<\/a>/gi, '###A_START###$1###A_MID###$2###A_END###')
       text = text.replace(/<span\s+([\s\S]*?)>([\s\S]*?)<\/span>/gi, '###SPAN_START###$1###SPAN_MID###$2###SPAN_END###')
       text = text.replace(/<i\s+([\s\S]*?)><\/i>/gi, '###I_START###$1###I_END###')
+      text = text.replace(/<img\s+([\s\S]*?)>/gi, '###IMG_START###$1###IMG_END###')
    }
 
    text = escapeHtml(text)
@@ -26,6 +27,7 @@ const processInline = (input, allowHtml = true) => {
       text = text.replace(/###A_START###([\s\S]*?)###A_MID###([\s\S]*?)###A_END###/g, '<a $1>$2</a>')
       text = text.replace(/###SPAN_START###([\s\S]*?)###SPAN_MID###([\s\S]*?)###SPAN_END###/g, '<span $1>$2</span>')
       text = text.replace(/###I_START###([\s\S]*?)###I_END###/g, '<i $1></i>')
+      text = text.replace(/###IMG_START###([\s\S]*?)###IMG_END###/g, '<img $1>')
    }
 
    return text

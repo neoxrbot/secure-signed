@@ -56,12 +56,20 @@
                               <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')"
                                  title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-code"></i></button>
+
                               <button type="button" class="btn btn-xs btn-outline-secondary"
-                                 @click="imageInput?.click()" title="Upload Media/File"
-                                 :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-paperclip"></i>
-                                 Media</button>
-                              <input ref="imageInput" type="file" class="d-none" accept="*/*" @change="uploadPhoto"
-                                 :disabled="isUploadingPhoto || isPreview">
+                                 @click="mediaInput?.click()" title="Upload Media (Image/Video/Audio)"
+                                 :disabled="loading || isUploadingPhoto || isPreview"><i
+                                    class="bi bi-film"></i></button>
+                              <input ref="mediaInput" type="file" class="d-none" accept="image/*,video/*,audio/*"
+                                 multiple @change="uploadMediaFiles" :disabled="isUploadingPhoto || isPreview">
+
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="fileInput?.click()"
+                                 title="Attach File (All Extensions)"
+                                 :disabled="loading || isUploadingPhoto || isPreview"><i
+                                    class="bi bi-paperclip"></i></button>
+                              <input ref="fileInput" type="file" class="d-none" accept="*/*" multiple
+                                 @change="uploadAttachmentFiles" :disabled="isUploadingPhoto || isPreview">
                            </div>
                         </div>
 
@@ -76,7 +84,8 @@
                            <div v-if="isUploadingPhoto"
                               class="upload-overlay d-flex flex-column align-items-center justify-content-center">
                               <div class="spinner-border spinner-border-sm text-accent mb-2" role="status"></div>
-                              <span class="fs-xs fw-semibold text-color">Uploading media...</span>
+                              <span class="fs-xs fw-semibold text-color">{{ uploadProgressText || 'Uploading...'
+                                 }}</span>
                            </div>
                         </div>
                      </div>
@@ -137,6 +146,7 @@ const isAdmin = useState('admin-status', () => false)
 
 const loading = ref(false)
 const isUploadingPhoto = ref(false)
+const uploadProgressText = ref('')
 const isPreview = ref(false)
 const error = ref('')
 
@@ -145,7 +155,8 @@ const page = ref(1)
 const perPage = ref(5)
 const totalNotes = ref(0)
 const editor = ref(null)
-const imageInput = ref(null)
+const mediaInput = ref(null)
+const fileInput = ref(null)
 const form = ref({ id: '', title: '', content: '', is_private: true })
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
@@ -306,34 +317,90 @@ const wrap = (a, b) => {
    })
 }
 
-const uploadPhoto = async (ev) => {
-   const file = ev.target.files?.[0]
-   if (!file) return
-   isUploadingPhoto.value = true
-   try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const r = await $fetch('/api/upload', { method: 'POST', body: fd })
-      const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
+const buildGalleryHtml = (images) => {
+   const main = images[0]
+   const side = images.slice(1, 5)
+   const extra = images.length - 5
 
-      let mediaTag = ''
-      if (file.type.startsWith('video/')) {
-         mediaTag = `\n<video controls class="plyr-video" src="${relativeUrl}"></video>\n`
-      } else if (file.type.startsWith('audio/')) {
-         mediaTag = `\n<audio controls class="plyr-audio" src="${relativeUrl}"></audio>\n`
-      } else if (file.type.startsWith('image/')) {
-         mediaTag = `\n![${file.name}](${relativeUrl})\n`
-      } else {
-         const sizeStr = formatBytes(file.size)
-         mediaTag = `\n<div class="file-download-box"><div class="file-info"><div class="file-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div><div><div class="file-name">${file.name}</div><div class="file-size">${sizeStr}</div></div></div><a href="${relativeUrl}" download="${file.name}" class="btn-download"><i class="bi bi-download"></i> Download</a></div>\n`
+   let html = `\n<div class="product-grid-gallery">\n`
+   html += `  <div class="grid-item item-main"><img src="${main.url}" alt="${main.name}"></div>\n`
+   side.forEach((img, idx) => {
+      const isLast = idx === side.length - 1 && extra > 0
+      html += `  <div class="grid-item"><img src="${img.url}" alt="${img.name}">`
+      if (isLast) {
+         html += `<div class="more-overlay">+${extra} Foto</div>`
+      }
+      html += `</div>\n`
+   })
+   html += `</div>\n`
+   return html
+}
+
+const uploadMediaFiles = async (ev) => {
+   const files = Array.from(ev.target.files || [])
+   if (!files.length) return
+   isUploadingPhoto.value = true
+   uploadProgressText.value = `Uploading (0/${files.length})...`
+
+   try {
+      const imageList = []
+      for (let i = 0; i < files.length; i++) {
+         const file = files[i]
+         uploadProgressText.value = `Uploading (${i + 1}/${files.length})...`
+         const fd = new FormData()
+         fd.append('file', file)
+         const r = await $fetch('/api/upload', { method: 'POST', body: fd })
+         const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
+
+         if (file.type.startsWith('image/')) {
+            imageList.push({ name: file.name, url: relativeUrl })
+         } else if (file.type.startsWith('video/')) {
+            insertAtCursor(`\n<video controls class="plyr-video" src="${relativeUrl}"></video>\n`)
+         } else if (file.type.startsWith('audio/')) {
+            insertAtCursor(`\n<audio controls class="plyr-audio" src="${relativeUrl}"></audio>\n`)
+         }
       }
 
-      insertAtCursor(mediaTag)
+      if (imageList.length > 0) {
+         if (imageList.length === 1) {
+            insertAtCursor(`\n![${imageList[0].name}](${imageList[0].url})\n`)
+         } else {
+            insertAtCursor(buildGalleryHtml(imageList))
+         }
+      }
    } catch (e) {
       error.value = e.message || 'Media upload failed'
    } finally {
       isUploadingPhoto.value = false
-      if (imageInput.value) imageInput.value.value = ''
+      uploadProgressText.value = ''
+      if (mediaInput.value) mediaInput.value.value = ''
+   }
+}
+
+const uploadAttachmentFiles = async (ev) => {
+   const files = Array.from(ev.target.files || [])
+   if (!files.length) return
+   isUploadingPhoto.value = true
+   uploadProgressText.value = `Uploading (0/${files.length})...`
+
+   try {
+      for (let i = 0; i < files.length; i++) {
+         const file = files[i]
+         uploadProgressText.value = `Uploading (${i + 1}/${files.length})...`
+         const fd = new FormData()
+         fd.append('file', file)
+         const r = await $fetch('/api/upload', { method: 'POST', body: fd })
+         const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
+         const sizeStr = formatBytes(file.size)
+         const tag = `\n<div class="file-download-box"><div class="file-info"><div class="file-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div><div><div class="file-name">${file.name}</div><div class="file-size">${sizeStr}</div></div></div><a href="${relativeUrl}" download="${file.name}" class="btn-download"><i class="bi bi-download"></i> Download</a></div>\n`
+         insertAtCursor(tag)
+      }
+   } catch (e) {
+      error.value = e.message || 'File upload failed'
+   } finally {
+      isUploadingPhoto.value = false
+      uploadProgressText.value = ''
+      if (fileInput.value) fileInput.value.value = ''
    }
 }
 
@@ -557,6 +624,60 @@ onMounted(check)
    max-height: 280px;
    object-fit: cover;
    margin: 0 !important;
+}
+
+.markdown-body :deep(.product-grid-gallery) {
+   display: grid;
+   grid-template-columns: repeat(4, 1fr);
+   grid-template-rows: repeat(2, 110px);
+   gap: 6px;
+   margin-top: 0.6rem;
+   margin-bottom: 0.6rem;
+   border-radius: 0.5rem;
+   overflow: hidden;
+}
+
+.markdown-body :deep(.product-grid-gallery .grid-item) {
+   position: relative;
+   overflow: hidden;
+   border-radius: 0.375rem;
+   background-color: var(--app-bg);
+   border: 1px solid var(--app-border-color);
+}
+
+.markdown-body :deep(.product-grid-gallery .item-main) {
+   grid-column: span 2;
+   grid-row: span 2;
+}
+
+.markdown-body :deep(.product-grid-gallery .grid-item img) {
+   width: 100% !important;
+   height: 100% !important;
+   object-fit: cover !important;
+   margin: 0 !important;
+   border: none !important;
+   border-radius: 0 !important;
+   display: block;
+}
+
+.markdown-body :deep(.product-grid-gallery .more-overlay) {
+   position: absolute;
+   inset: 0;
+   background-color: rgba(0, 0, 0, 0.65);
+   color: #ffffff;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-weight: 700;
+   font-size: 0.85rem;
+   backdrop-filter: blur(2px);
+}
+
+@media (max-width: 576px) {
+   .markdown-body :deep(.product-grid-gallery) {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 100px);
+   }
 }
 
 .markdown-body :deep(.file-download-box) {

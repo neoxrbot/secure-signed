@@ -472,6 +472,60 @@ onMounted(async () => {
    margin: 0 !important;
 }
 
+.markdown-body :deep(.product-grid-gallery) {
+   display: grid;
+   grid-template-columns: repeat(4, 1fr);
+   grid-template-rows: repeat(2, 110px);
+   gap: 6px;
+   margin-top: 0.6rem;
+   margin-bottom: 0.6rem;
+   border-radius: 0.5rem;
+   overflow: hidden;
+}
+
+.markdown-body :deep(.product-grid-gallery .grid-item) {
+   position: relative;
+   overflow: hidden;
+   border-radius: 0.375rem;
+   background-color: var(--app-bg);
+   border: 1px solid var(--app-border-color);
+}
+
+.markdown-body :deep(.product-grid-gallery .item-main) {
+   grid-column: span 2;
+   grid-row: span 2;
+}
+
+.markdown-body :deep(.product-grid-gallery .grid-item img) {
+   width: 100% !important;
+   height: 100% !important;
+   object-fit: cover !important;
+   margin: 0 !important;
+   border: none !important;
+   border-radius: 0 !important;
+   display: block;
+}
+
+.markdown-body :deep(.product-grid-gallery .more-overlay) {
+   position: absolute;
+   inset: 0;
+   background-color: rgba(0, 0, 0, 0.65);
+   color: #ffffff;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-weight: 700;
+   font-size: 0.85rem;
+   backdrop-filter: blur(2px);
+}
+
+@media (max-width: 576px) {
+   .markdown-body :deep(.product-grid-gallery) {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 100px);
+   }
+}
+
 .markdown-body :deep(.file-download-box) {
    display: flex;
    align-items: center;
