@@ -34,7 +34,7 @@ export async function getGlobalStats(db) {
    ).all()
 
    const statsMap = {}
-   results.forEach(row => { statsMap[row.key] = row.value })
+      ; (results || []).forEach(row => { statsMap[row.key] = row.value })
 
    return {
       total_files: parseInt(statsMap['stats:total_files'] || '0', 10),

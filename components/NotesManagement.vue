@@ -137,9 +137,11 @@ const searchQuery = ref('')
 const totalPages = computed(() => Math.max(Math.ceil((props.totalNotes || 0) / (props.perPage || 5)), 1))
 
 const displayNotes = computed(() => {
-   if (!searchQuery.value.trim()) return props.notes || []
+   let list = (props.notes || []).slice()
+   list.sort((a, b) => Number(b.created_at || 0) - Number(a.created_at || 0))
+   if (!searchQuery.value.trim()) return list
    const q = searchQuery.value.toLowerCase()
-   return (props.notes || []).filter(n => (n.title || '').toLowerCase().includes(q))
+   return list.filter(n => (n.title || '').toLowerCase().includes(q))
 })
 
 const formatDate = (v) => {
