@@ -10,12 +10,22 @@ const processInline = (input, allowHtml = true) => {
 
    if (allowHtml) {
       text = text.replace(/<video\s+([\s\S]*?)><\/video>/gi, '###VIDEO_START###$1###VIDEO_END###')
+      text = text.replace(/<audio\s+([\s\S]*?)><\/audio>/gi, '###AUDIO_START###$1###AUDIO_END###')
+      text = text.replace(/<div\s+([\s\S]*?)>([\s\S]*?)<\/div>/gi, '###DIV_START###$1###DIV_MID###$2###DIV_END###')
+      text = text.replace(/<a\s+([\s\S]*?)>([\s\S]*?)<\/a>/gi, '###A_START###$1###A_MID###$2###A_END###')
+      text = text.replace(/<span\s+([\s\S]*?)>([\s\S]*?)<\/span>/gi, '###SPAN_START###$1###SPAN_MID###$2###SPAN_END###')
+      text = text.replace(/<i\s+([\s\S]*?)><\/i>/gi, '###I_START###$1###I_END###')
    }
 
    text = escapeHtml(text)
 
    if (allowHtml) {
       text = text.replace(/###VIDEO_START###([\s\S]*?)###VIDEO_END###/g, '<video $1></video>')
+      text = text.replace(/###AUDIO_START###([\s\S]*?)###AUDIO_END###/g, '<audio $1></audio>')
+      text = text.replace(/###DIV_START###([\s\S]*?)###DIV_MID###([\s\S]*?)###DIV_END###/g, '<div $1>$2</div>')
+      text = text.replace(/###A_START###([\s\S]*?)###A_MID###([\s\S]*?)###A_END###/g, '<a $1>$2</a>')
+      text = text.replace(/###SPAN_START###([\s\S]*?)###SPAN_MID###([\s\S]*?)###SPAN_END###/g, '<span $1>$2</span>')
+      text = text.replace(/###I_START###([\s\S]*?)###I_END###/g, '<i $1></i>')
    }
 
    return text
@@ -74,9 +84,9 @@ export default class MarkdownIt {
             continue
          }
 
-         if (this.options.html && /^<video\b[^>]*>.*?<\/video>$/i.test(trimmed)) {
+         if (this.options.html && /^<(div|video|audio|section|article)\b/i.test(trimmed)) {
             closeList()
-            html += `${trimmed}`
+            html += `${trimmed}\n`
             continue
          }
 

@@ -57,11 +57,11 @@
                                  title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i
                                     class="bi bi-code"></i></button>
                               <button type="button" class="btn btn-xs btn-outline-secondary"
-                                 @click="imageInput?.click()" title="Upload Media"
+                                 @click="imageInput?.click()" title="Upload Media/File"
                                  :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-paperclip"></i>
                                  Media</button>
-                              <input ref="imageInput" type="file" class="d-none" accept="image/*,video/*"
-                                 @change="uploadPhoto" :disabled="isUploadingPhoto || isPreview">
+                              <input ref="imageInput" type="file" class="d-none" accept="*/*" @change="uploadPhoto"
+                                 :disabled="isUploadingPhoto || isPreview">
                            </div>
                         </div>
 
@@ -158,6 +158,15 @@ const previewHtml = computed(() => {
    return md.render(text)
 })
 
+const formatBytes = (bytes, decimals = 2) => {
+   if (!bytes || bytes === 0) return '0 B'
+   const k = 1024
+   const dm = decimals < 0 ? 0 : decimals
+   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+   const i = Math.floor(Math.log(bytes) / Math.log(k))
+   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
 const initPlyr = async () => {
    await nextTick()
    if (typeof window !== 'undefined') {
@@ -167,20 +176,15 @@ const initPlyr = async () => {
             v.classList.add('plyr-initialized')
             new Plyr(v, {
                ratio: '16:9',
-               controls: [
-                  'play-large',
-                  'play',
-                  'progress',
-                  'current-time',
-                  'duration',
-                  'mute',
-                  'volume',
-                  'settings',
-                  'pip',
-                  'airplay',
-                  'fullscreen'
-               ]
+               controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen']
             })
+         }
+      })
+      const audios = document.querySelectorAll('.markdown-body audio')
+      audios.forEach(a => {
+         if (!a.classList.contains('plyr-initialized')) {
+            a.classList.add('plyr-initialized')
+            new Plyr(a, { controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume'] })
          }
       })
    }
@@ -311,9 +315,19 @@ const uploadPhoto = async (ev) => {
       fd.append('file', file)
       const r = await $fetch('/api/upload', { method: 'POST', body: fd })
       const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
-      const mediaTag = file.type.startsWith('video/')
-         ? `\n<video controls class="plyr-video" src="${relativeUrl}"></video>\n`
-         : `\n![${file.name}](${relativeUrl})\n`
+
+      let mediaTag = ''
+      if (file.type.startsWith('video/')) {
+         mediaTag = `\n<video controls class="plyr-video" src="${relativeUrl}"></video>\n`
+      } else if (file.type.startsWith('audio/')) {
+         mediaTag = `\n<audio controls class="plyr-audio" src="${relativeUrl}"></audio>\n`
+      } else if (file.type.startsWith('image/')) {
+         mediaTag = `\n![${file.name}](${relativeUrl})\n`
+      } else {
+         const sizeStr = formatBytes(file.size)
+         mediaTag = `\n<div class="file-download-box"><div class="file-info"><div class="file-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div><div><div class="file-name">${file.name}</div><div class="file-size">${sizeStr}</div></div></div><a href="${relativeUrl}" download="${file.name}" class="btn-download"><i class="bi bi-download"></i> Download</a></div>\n`
+      }
+
       insertAtCursor(mediaTag)
    } catch (e) {
       error.value = e.message || 'Media upload failed'
@@ -522,10 +536,95 @@ onMounted(check)
 .markdown-body :deep(img) {
    max-width: 100%;
    height: auto;
+   display: block;
+   margin: 0.5rem auto !important;
    border-radius: 0.5rem;
    border: 1px solid var(--app-border-color);
-   margin-top: 0.25rem !important;
-   margin-bottom: 0.25rem !important;
+}
+
+.markdown-body :deep(p:has(img + img)) {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+   gap: 0.5rem;
+   align-items: center;
+   margin-top: 0.5rem !important;
+   margin-bottom: 0.5rem !important;
+}
+
+.markdown-body :deep(p:has(img + img) img) {
+   width: 100%;
+   height: 100%;
+   max-height: 280px;
+   object-fit: cover;
+   margin: 0 !important;
+}
+
+.markdown-body :deep(.file-download-box) {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   background-color: var(--app-bg);
+   border: 1px solid var(--app-border-color);
+   border-radius: 0.5rem;
+   padding: 0.75rem 1rem;
+   margin: 0.5rem 0;
+   gap: 0.75rem;
+   flex-wrap: wrap;
+}
+
+.markdown-body :deep(.file-download-box .file-info) {
+   display: flex;
+   align-items: center;
+   gap: 0.75rem;
+   min-width: 0;
+}
+
+.markdown-body :deep(.file-download-box .file-icon) {
+   width: 36px;
+   height: 36px;
+   min-width: 36px;
+   border-radius: 0.375rem;
+   background-color: var(--app-card-bg);
+   border: 1px solid var(--app-border-color);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   color: var(--app-accent-color);
+   font-size: 1.1rem;
+}
+
+.markdown-body :deep(.file-download-box .file-name) {
+   font-size: 0.85rem;
+   font-weight: 600;
+   color: var(--app-text-color);
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+}
+
+.markdown-body :deep(.file-download-box .file-size) {
+   font-size: 0.7rem;
+   color: var(--app-secondary-text-color);
+}
+
+.markdown-body :deep(.file-download-box .btn-download) {
+   display: inline-flex;
+   align-items: center;
+   gap: 0.35rem;
+   font-size: 0.75rem;
+   font-weight: 600;
+   color: var(--app-text-color);
+   background-color: var(--app-card-bg);
+   border: 1px solid var(--app-border-color);
+   padding: 0.35rem 0.75rem;
+   border-radius: 0.375rem;
+   text-decoration: none;
+   transition: all 0.2s ease;
+}
+
+.markdown-body :deep(.file-download-box .btn-download:hover) {
+   border-color: var(--app-accent-color);
+   color: var(--app-accent-color);
 }
 
 .markdown-body :deep(.plyr) {
@@ -537,8 +636,6 @@ onMounted(check)
    --plyr-range-thumb-height: 12px;
    --plyr-range-thumb-active-scale: 1.15;
    width: 100%;
-   aspect-ratio: 16 / 9;
-   background-color: #000;
    border-radius: 0.75rem;
    overflow: hidden;
    border: 1px solid var(--app-border-color);
@@ -547,8 +644,14 @@ onMounted(check)
 }
 
 .markdown-body :deep(.plyr--video) {
+   aspect-ratio: 16 / 9;
    background: #000;
    height: 100%;
+}
+
+.markdown-body :deep(.plyr--audio) {
+   --plyr-audio-controls-background: var(--app-bg);
+   --plyr-audio-control-color: var(--app-text-color);
 }
 
 .markdown-body :deep(.plyr__control--overlaid) {
