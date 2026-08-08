@@ -1,100 +1,82 @@
 import { getCloudflareEnv } from '../utils/cloudflare.js'
 
+function escapeSqlValue(val) {
+   if (val === null || val === undefined) return 'NULL'
+   if (typeof val === 'number') return val.toString()
+   if (typeof val === 'boolean') return val ? '1' : '0'
+   const str = String(val).replace(/'/g, "''")
+   return `'${str}'`
+}
+
 export default defineEventHandler(async (event) => {
-   const query = getQuery(event)
    const env = getCloudflareEnv(event)
+   const query = getQuery(event)
+   const db = env?.DB
 
-   if (query.secret !== env.CRON_SECRET) {
-      // throw createError({
-      //    statusCode: 401,
-      //    statusMessage: 'Unauthorized'
-      // })
-      return { status: false, message: 'Unauthorized' }
+   const secret = query.secret
+   const expectedSecret = env?.CRON_SECRET || env?.ADMIN_SECRET || env?.SECRET
+
+   if (!expectedSecret || secret !== expectedSecret) {
+      throw createError({ statusCode: 401, statusMessage: 'Unauthorized: Invalid secret token' })
    }
 
-   const db = env.DB
-
-   const tables = await db.prepare(`
-    SELECT name, sql
-    FROM sqlite_master
-    WHERE type = 'table'
-      AND name NOT LIKE 'sqlite_%'
-    ORDER BY name
-  `).all()
-
-   const output = []
-
-   output.push('-- D1 SQLite Backup')
-   output.push(`-- Created: ${new Date().toISOString()}`)
-   output.push('PRAGMA foreign_keys=OFF;')
-   output.push('BEGIN TRANSACTION;')
-   output.push('')
-
-   for (const table of tables.results) {
-      const tableName = table.name
-
-      // CREATE TABLE
-      if (table.sql) {
-         output.push(`${table.sql};`)
-         output.push('')
-      }
-
-      // Ambil data
-      const rows = await db
-         .prepare(`SELECT * FROM "${tableName.replaceAll('"', '""')}"`)
-         .all()
-
-      for (const row of rows.results) {
-         const columns = Object.keys(row)
-
-         const values = columns.map((column) => {
-            const value = row[column]
-
-            if (value === null || value === undefined) {
-               return 'NULL'
-            }
-
-            if (typeof value === 'number') {
-               return String(value)
-            }
-
-            if (typeof value === 'boolean') {
-               return value ? '1' : '0'
-            }
-
-            return `'${String(value)
-               .replaceAll('\\', '\\\\')
-               .replaceAll("'", "''")}'`
-         })
-
-         const columnSql = columns
-            .map((column) => `"${column.replaceAll('"', '""')}"`)
-            .join(', ')
-
-         output.push(
-            `INSERT INTO "${tableName.replaceAll('"', '""')}" (${columnSql}) VALUES (${values.join(', ')});`
-         )
-      }
-
-      output.push('')
+   if (!db) {
+      throw createError({ statusCode: 500, statusMessage: 'Database D1 binding not found' })
    }
 
-   output.push('COMMIT;')
-   output.push('PRAGMA foreign_keys=ON;')
+   try {
+      const now = new Date()
+      const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, 19)
+      const fileName = `d1_backup_${dateStr}.sql`
 
-   const sql = output.join('\n')
+      let sqlDump = `-- ==========================================\n`
+      sqlDump += `-- Cloudflare D1 Database Dump\n`
+      sqlDump += `-- Export Date: ${now.toISOString()}\n`
+      sqlDump += `-- ==========================================\n\n`
+      sqlDump += `PRAGMA foreign_keys = OFF;\n`
+      sqlDump += `BEGIN TRANSACTION;\n\n`
 
-   const filename = `d1-backup-${new Date()
-      .toISOString()
-      .slice(0, 10)}.sql`
+      const { results: schemaResults } = await db.prepare(
+         `SELECT type, name, sql FROM sqlite_master WHERE type IN ('table', 'index', 'trigger') AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY type DESC, name ASC`
+      ).all()
 
-   setHeader(event, 'Content-Type', 'application/sql; charset=utf-8')
-   setHeader(
-      event,
-      'Content-Disposition',
-      `attachment; filename="${filename}"`
-   )
-   setHeader(event, 'Content-Length', String(new TextEncoder().encode(sql).length))
+      const tables = (schemaResults || []).filter(item => item.type === 'table')
 
-   return sql
+      for (const table of tables) {
+         sqlDump += `-- Table: ${table.name}\n`
+         if (table.sql) {
+            sqlDump += `${table.sql};\n`
+         }
+
+         const { results: rows } = await db.prepare(`SELECT * FROM "${table.name}"`).all()
+
+         if (rows && rows.length > 0) {
+            const cols = Object.keys(rows[0]).map(c => `"${c}"`).join(', ')
+            for (const row of rows) {
+               const vals = Object.values(row).map(escapeSqlValue).join(', ')
+               sqlDump += `INSERT INTO "${table.name}" (${cols}) VALUES (${vals});\n`
+            }
+         }
+         sqlDump += `\n`
+      }
+
+      const otherSchema = (schemaResults || []).filter(item => item.type !== 'table')
+      if (otherSchema.length > 0) {
+         sqlDump += `-- Indexes & Triggers\n`
+         for (const item of otherSchema) {
+            if (item.sql) sqlDump += `${item.sql};\n`
+         }
+         sqlDump += `\n`
+      }
+
+      sqlDump += `COMMIT;\n`
+
+      setHeader(event, 'Content-Type', 'text/x-sql; charset=utf-8')
+      setHeader(event, 'Content-Disposition', `attachment; filename="${fileName}"`)
+      setHeader(event, 'Cache-Control', 'no-cache, no-store, must-revalidate')
+
+      return sqlDump
+   } catch (err) {
+      throw createError({ statusCode: 500, statusMessage: `Backup failed: ${err.message}` })
+   }
 })
