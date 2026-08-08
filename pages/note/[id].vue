@@ -65,6 +65,13 @@
                      <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
                   </div>
 
+                  <div v-if="getTagsList(note.tags).length" class="d-flex gap-1.5 flex-wrap mb-3">
+                     <NuxtLink v-for="tag in getTagsList(note.tags)" :key="tag" :to="`/tag/${tag}`"
+                        class="tag-badge text-decoration-none">
+                        #{{ tag }}
+                     </NuxtLink>
+                  </div>
+
                   <div class="markdown-body" v-html="html"></div>
                </div>
             </article>
@@ -154,6 +161,12 @@ const handleKeydown = (e) => {
       if (e.key === 'ArrowRight') nextImage()
       if (e.key === 'ArrowLeft') prevImage()
    }
+}
+
+const getTagsList = (tags) => {
+   if (Array.isArray(tags)) return tags
+   if (typeof tags === 'string') return tags.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean)
+   return []
 }
 
 const cleanContent = computed(() => {
@@ -355,6 +368,21 @@ onUnmounted(() => {
    font-weight: 700;
    line-height: 1.3;
    letter-spacing: -0.01em;
+}
+
+.tag-badge {
+   font-size: 0.7rem;
+   padding: 0.2rem 0.5rem;
+   border-radius: 0.25rem;
+   background-color: var(--app-bg);
+   color: var(--app-secondary-text-color);
+   border: 1px solid var(--app-border-color);
+   transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tag-badge:hover {
+   color: var(--app-accent-color);
+   border-color: var(--app-border-color);
 }
 
 .pill-badge {
