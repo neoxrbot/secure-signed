@@ -83,8 +83,18 @@ const fetchTaggedNotes = async () => {
    loading.value = true
    try {
       const res = await $api(`/api/notes?public=true&tag=${encodeURIComponent(tagName.value)}&limit=50`)
-      notes.value = res.data || []
-      totalNotes.value = res.meta?.total || notes.value.length
+      const rawData = res.data || []
+
+      notes.value = rawData.filter(n => {
+         if (!n.tags) return false
+         const tagList = Array.isArray(n.tags)
+            ? n.tags
+            : String(n.tags).split(',').map(t => t.trim().replace(/^#/, ''))
+
+         return tagList.some(t => t.toLowerCase() === tagName.value.toLowerCase())
+      })
+
+      totalNotes.value = notes.value.length
    } catch {
       notes.value = []
    } finally {
