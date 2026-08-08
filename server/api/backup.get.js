@@ -5,10 +5,11 @@ export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
 
    if (query.secret !== env.CRON_SECRET) {
-      throw createError({
-         statusCode: 401,
-         statusMessage: 'Unauthorized'
-      })
+      // throw createError({
+      //    statusCode: 401,
+      //    statusMessage: 'Unauthorized'
+      // })
+      return { status: false, message: 'Unauthorized' }
    }
 
    const db = env.DB
