@@ -76,8 +76,7 @@
                         <input v-model="form.tags" class="form-control" placeholder="e.g. tech, nuxt, tutorial"
                            :disabled="loading || isUploadingPhoto">
                         <div v-if="parsedTags.length" class="d-flex gap-1 flex-wrap mt-2">
-                           <span v-for="tag in parsedTags" :key="tag" class="badge bg-secondary-subtle text-color">#{{
-                              tag }}</span>
+                           <span v-for="tag in parsedTags" :key="tag" class="tag-preview-item">#{{ tag }}</span>
                         </div>
                      </div>
 
@@ -678,6 +677,16 @@ onUnmounted(() => {
 .editor-subtitle {
    font-size: 0.7rem;
    color: var(--app-secondary-text-color) !important;
+}
+
+.tag-preview-item {
+   font-size: 0.7rem;
+   padding: 0.2rem 0.5rem;
+   border-radius: 0.25rem;
+   background-color: var(--app-bg);
+   color: var(--app-text-color);
+   border: 1px solid var(--app-border-color);
+   font-weight: 600;
 }
 
 .thumb-preview-box {
