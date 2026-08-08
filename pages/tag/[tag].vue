@@ -33,7 +33,7 @@
                      </div>
                   </div>
                   <div class="min-w-0">
-                     <h6 class="fw-bold text-color mb-1 text-truncate">{{ n.title }}</h6>
+                     <h6 class="fw-bold text-color mb-1 note-tag-title">{{ n.title }}</h6>
                      <span class="fs-xs text-muted">{{ formatDate(n.created_at) }} &middot; {{ n.reads || 0 }}
                         reads</span>
                   </div>
@@ -82,14 +82,9 @@ const formatDate = (v) => {
 const fetchTaggedNotes = async () => {
    loading.value = true
    try {
-      const res = await $api(`/api/notes?public=true&limit=50`)
-      const allNotes = res.data || []
-      notes.value = allNotes.filter(n => {
-         if (!n.tags) return false
-         const tagArray = Array.isArray(n.tags) ? n.tags : n.tags.split(',').map(t => t.trim().replace(/^#/, ''))
-         return tagArray.some(t => t.toLowerCase() === tagName.value.toLowerCase())
-      })
-      totalNotes.value = notes.value.length
+      const res = await $api(`/api/notes?public=true&tag=${encodeURIComponent(tagName.value)}&limit=50`)
+      notes.value = res.data || []
+      totalNotes.value = res.meta?.total || notes.value.length
    } catch {
       notes.value = []
    } finally {
@@ -129,12 +124,18 @@ onMounted(fetchTaggedNotes)
 }
 
 .tag-note-card {
-   transition: transform 0.2s ease, border-color 0.2s ease;
+   transition: transform 0.2s ease;
 }
 
 .tag-note-card:hover {
    transform: translateX(3px);
-   border-color: var(--app-accent-color);
+   border-color: var(--app-border-color);
+}
+
+.note-tag-title {
+   font-size: 0.95rem;
+   line-height: 1.35;
+   word-break: break-word;
 }
 
 .tag-thumb-box {
