@@ -1,82 +1,134 @@
 <template>
    <div class="container px-3 mb-5">
-      <div class="reader-max-width mx-auto">
-         <div class="note-reader-card">
-            <div v-if="pending" class="p-3 p-md-4">
-               <div class="d-flex align-items-center justify-content-between pb-3 border-bottom mb-3">
-                  <div class="skeleton-btn"></div>
-                  <div class="skeleton-pill"></div>
-                  <div class="skeleton-btn"></div>
-               </div>
-               <div class="skeleton-title mb-2" style="width: 80%;"></div>
-               <div class="skeleton-title mb-3" style="width: 50%;"></div>
-               <div class="skeleton-meta mb-3"></div>
-               <div class="d-flex flex-column gap-2 mb-3">
-                  <div class="skeleton-line" style="width: 100%;"></div>
-                  <div class="skeleton-line" style="width: 90%;"></div>
-                  <div class="skeleton-line" style="width: 95%;"></div>
-                  <div class="skeleton-line" style="width: 70%;"></div>
-               </div>
-               <div class="skeleton-image mb-3"></div>
+      <div class="d-flex justify-content-between align-items-center mb-4 p-3 content-card">
+         <div class="d-flex align-items-center gap-2">
+            <div class="admin-icon-badge"><i class="bi bi-person-badge-fill"></i></div>
+            <div>
+               <h5 class="mb-0 fw-bold text-color">Admin Workspace</h5>
+               <p class="text-muted mb-0 fs-xs">Create, edit, and publish notes</p>
             </div>
-
-            <div v-else-if="error" class="p-4 p-md-5 text-center">
-               <div class="error-icon-circle mb-3">
-                  <i class="bi bi-exclamation-octagon"></i>
-               </div>
-               <h6 class="fw-bold text-color mb-1">Unable to Load Note</h6>
-               <p class="fs-xs text-muted mb-3">{{ error }}</p>
-               <button class="btn btn-sm btn-custom-accent px-3" @click="goBack">
-                  Return
-               </button>
-            </div>
-
-            <article v-else>
-               <div class="card-header-bar p-3 border-bottom d-flex align-items-center justify-content-between gap-2">
-                  <button class="btn btn-sm btn-outline-secondary btn-action-pill" @click="goBack" title="Back">
-                     <i class="bi bi-arrow-left"></i>
-                     <span class="d-none d-sm-inline ms-1">Back</span>
-                  </button>
-
-                  <div class="d-flex align-items-center">
-                     <span v-if="note.is_private" class="pill-badge private">
-                        <i class="bi bi-lock-fill me-1"></i>Private
-                     </span>
-                     <span v-else class="pill-badge public">
-                        <i class="bi bi-globe me-1"></i>Public
-                     </span>
-                  </div>
-
-                  <button class="btn btn-sm btn-outline-secondary btn-action-pill" @click="copyShareLink"
-                     title="Share Note">
-                     <i :class="copyStatus === 'Copied!' ? 'bi bi-check-lg text-success' : 'bi bi-share'"></i>
-                     <span class="d-none d-sm-inline ms-1">{{ copyStatus }}</span>
-                  </button>
-               </div>
-
-               <div class="p-3 p-md-4">
-                  <h1 class="article-title mb-2 text-color">{{ note.title }}</h1>
-
-                  <div class="d-flex align-items-center gap-2 fs-xs text-muted flex-wrap mb-3 pb-3 border-bottom">
-                     <span><i class="bi bi-eye me-1 opacity-75"></i>{{ note.reads || 0 }} reads</span>
-                     <span>•</span>
-                     <span><i class="bi bi-clock me-1 opacity-75"></i>{{ readingTime }} min read</span>
-                     <span>•</span>
-                     <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
-                  </div>
-
-                  <div v-if="getTagsList(note.tags).length" class="d-flex gap-1.5 flex-wrap mb-3">
-                     <NuxtLink v-for="tag in getTagsList(note.tags)" :key="tag" :to="`/tag/${tag}`"
-                        class="tag-badge text-decoration-none">
-                        #{{ tag }}
-                     </NuxtLink>
-                  </div>
-
-                  <div class="markdown-body" v-html="html"></div>
-               </div>
-            </article>
+         </div>
+         <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary btn-icon-only" @click="handleBackup" :disabled="isBackingUp" title="Download Database Backup">
+               <span v-if="isBackingUp" class="spinner-border spinner-border-sm"></span>
+               <i v-else class="bi bi-database-down"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-icon-only" @click="logout" title="Logout">
+               <i class="bi bi-box-arrow-right"></i>
+            </button>
          </div>
       </div>
+
+      <div class="row g-4 align-items-start">
+         <div class="col-lg-7">
+            <div class="note-editor-card h-100 d-flex flex-column">
+               <div class="p-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div class="d-flex align-items-center gap-2">
+                     <div class="editor-badge"><i class="bi bi-pencil-square"></i></div>
+                     <div>
+                        <h6 class="editor-title mb-0">{{ form.id ? 'Edit Note' : 'Create New Note' }}</h6>
+                        <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write content' }}</span>
+                     </div>
+                  </div>
+                  <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
+                     <i class="bi bi-x-circle me-1"></i> Cancel Edit
+                  </button>
+               </div>
+
+               <div class="p-4 flex-grow-1">
+                  <form @submit.prevent="saveNote">
+                     <div class="mb-3">
+                        <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Title</label>
+                        <input v-model="form.title" class="form-control" placeholder="Enter note title..." required :disabled="loading || isUploadingPhoto">
+                     </div>
+
+                     <div class="mb-3">
+                        <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Thumbnail (Optional)</label>
+                        <div class="input-group">
+                           <input v-model="form.thumbnail" class="form-control" placeholder="Image URL or upload photo..." :disabled="loading || isUploadingPhoto">
+                           <button type="button" class="btn btn-outline-secondary" @click="thumbInput?.click()" :disabled="loading || isUploadingPhoto" title="Upload Thumbnail">
+                              <i class="bi bi-image"></i>
+                           </button>
+                        </div>
+                        <input ref="thumbInput" type="file" class="d-none" accept="image/*" @change="uploadThumbnail" :disabled="isUploadingPhoto">
+                        
+                        <div class="mt-2 d-flex align-items-center gap-2">
+                           <div class="thumb-preview-box">
+                              <img v-if="form.thumbnail" :src="form.thumbnail" class="thumb-img" />
+                              <div v-else class="thumb-letter-avatar">
+                                 {{ firstLetter }}
+                              </div>
+                           </div>
+                           <span class="fs-xs text-muted">{{ form.thumbnail ? 'Custom thumbnail image set' : 'Fallback letter avatar will be used' }}</span>
+                        </div>
+                     </div>
+
+                     <div class="mb-3">
+                        <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Tags (Comma Separated)</label>
+                        <input v-model="form.tags" class="form-control" placeholder="e.g. tech, nuxt, tutorial" :disabled="loading || isUploadingPhoto">
+                        <div v-if="parsedTags.length" class="d-flex gap-2 flex-wrap mt-2">
+                           <span v-for="tag in parsedTags" :key="tag" class="tag-preview-item">#{{ tag }}</span>
+                        </div>
+                     </div>
+
+                     <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                           <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted mb-0">Content</label>
+                           <div class="toolbar d-flex align-items-center gap-1">
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('**', '**')" title="Bold" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-type-bold"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('_', '_')" title="Italic" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-type-italic"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="insertAtCursor('\n- ')" title="List" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-list-ul"></i></button>
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="wrap('`', '`')" title="Code" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-code"></i></button>
+
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="mediaInput?.click()" title="Upload Media (Image/Video/Audio)" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-film"></i></button>
+                              <input ref="mediaInput" type="file" class="d-none" accept="image/*,video/*,audio/*" multiple @change="uploadMediaFiles" :disabled="isUploadingPhoto || isPreview">
+
+                              <button type="button" class="btn btn-xs btn-outline-secondary" @click="fileInput?.click()" title="Attach File (All Extensions)" :disabled="loading || isUploadingPhoto || isPreview"><i class="bi bi-paperclip"></i></button>
+                              <input ref="fileInput" type="file" class="d-none" accept="*/*" multiple @change="uploadAttachmentFiles" :disabled="isUploadingPhoto || isPreview">
+                           </div>
+                        </div>
+
+                        <div class="textarea-wrapper position-relative">
+                           <div v-if="isPreview" class="preview-box form-control overflow-auto">
+                              <div v-if="previewHtml" class="markdown-body" v-html="previewHtml"></div>
+                              <span v-else class="text-muted fs-xs italic">Nothing to preview...</span>
+                           </div>
+                           <textarea v-else ref="editor" v-model="form.content" class="form-control note-textarea" rows="11" placeholder="Write content here..." required :disabled="loading || isUploadingPhoto"></textarea>
+                           <div v-if="isUploadingPhoto" class="upload-overlay d-flex flex-column align-items-center justify-content-center">
+                              <div class="spinner-border spinner-border-sm text-accent mb-2" role="status"></div>
+                              <span class="fs-xs fw-semibold text-color">{{ uploadProgressText || 'Uploading...' }}</span>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div class="d-flex align-items-center gap-4 mb-4">
+                        <div class="form-check form-switch mb-0">
+                           <input id="privateSwitch" v-model="form.is_private" class="form-check-input" type="checkbox" :disabled="loading || isUploadingPhoto">
+                           <label class="form-check-label fs-sm text-color fw-semibold" for="privateSwitch">Private</label>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                           <input id="previewSwitch" v-model="isPreview" class="form-check-input" type="checkbox" :disabled="loading || isUploadingPhoto">
+                           <label class="form-check-label fs-sm text-color fw-semibold" for="previewSwitch">Preview</label>
+                        </div>
+                     </div>
+
+                     <div class="d-flex gap-2">
+                        <button class="btn btn-custom-accent py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2" :disabled="loading || isUploadingPhoto">
+                           <span v-if="loading" class="spinner-border spinner-border-sm"></span>
+                           <i v-else class="bi bi-check-circle-fill"></i>
+                           <span>{{ form.id ? 'Update Article' : 'Publish Article' }}</span>
+                        </button>
+                     </div>
+                  </form>
+               </div>
+            </div>
+         </div>
+
+         <div class="col-lg-5">
+            <NotesManagement :notes="notes" :page="page" :per-page="perPage" :total-notes="totalNotes" :loading="loading" :active-edit-id="form.id" @edit="editNote" @delete="removeNote" @page-change="goToPage" @per-page-change="handlePerPageChange" @refresh="fetchNotes" />
+         </div>
+      </div>
+      <Alert type="danger mt-3" :show="!!error">{{ error }}</Alert>
 
       <Transition name="fade">
          <div v-if="lightbox.isOpen" class="lightbox-overlay" @click.self="closeLightbox">
@@ -101,26 +153,48 @@
 </template>
 
 <script setup>
+import { ref, computed, watch, nextTick, reactive, onMounted, onUnmounted } from 'vue'
+import { useNuxtApp, useRouter, useState, useHead } from '#app'
 import MarkdownIt from '@/utils/markdown-it'
-import { computed, onMounted, onUnmounted, ref, watch, nextTick, reactive } from 'vue'
-import { useRoute, useRouter, useNuxtApp, useHead } from '#app'
-
 import Prism from 'prismjs'
 import 'prismjs/themes/prism-tomorrow.css'
-
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 
-const route = useRoute()
-const router = useRouter()
-const { $api } = useNuxtApp()
+useHead({ title: 'Workspace' })
 
-const note = ref({})
-const pending = ref(true)
+const { $api } = useNuxtApp()
+const router = useRouter()
+const isAdmin = useState('admin-status', () => false)
+
+const loading = ref(false)
+const isBackingUp = ref(false)
+const isUploadingPhoto = ref(false)
+const uploadProgressText = ref('')
+const isPreview = ref(false)
 const error = ref('')
-const copyStatus = ref('Share')
+
+const notes = ref([])
+const page = ref(1)
+const perPage = ref(5)
+const totalNotes = ref(0)
+const editor = ref(null)
+const mediaInput = ref(null)
+const fileInput = ref(null)
+const thumbInput = ref(null)
+const form = ref({ id: '', title: '', content: '', thumbnail: '', tags: '', is_private: true })
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
+
+const firstLetter = computed(() => {
+   const t = (form.value.title || '').trim()
+   return t ? t.charAt(0).toUpperCase() : 'N'
+})
+
+const parsedTags = computed(() => {
+   if (!form.value.tags) return []
+   return form.value.tags.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean)
+})
 
 const lightbox = reactive({
    isOpen: false,
@@ -163,19 +237,42 @@ const handleKeydown = (e) => {
    }
 }
 
-const getTagsList = (tags) => {
-   if (Array.isArray(tags)) return tags
-   if (typeof tags === 'string') return tags.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean)
-   return []
+const handleBackup = async () => {
+   isBackingUp.value = true
+   try {
+      const res = await $fetch('/api/backup?secret=neoxr', { responseType: 'blob' })
+      const blob = new Blob([res], { type: 'text/x-sql' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `d1_backup_${new Date().toISOString().slice(0, 10)}.sql`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      a.remove()
+   } catch (e) {
+      error.value = e.message || 'Backup failed'
+   } finally {
+      isBackingUp.value = false
+   }
 }
 
-const cleanContent = computed(() => {
-   let text = note.value.content || ''
+const previewHtml = computed(() => {
+   let text = form.value.content || ''
+   if (!text.trim()) return ''
    text = text.replace(/[\u2010-\u2015\u2212]/g, '-')
-   return text.replace(/(?:\r?\n|^)\s*---+\s*(?=\r?\n|$)/g, '\n\n---\n\n')
+   text = text.replace(/(?:\r?\n|^)\s*---+\s*(?=\r?\n|$)/g, '\n\n---\n\n')
+   return md.render(text)
 })
 
-const html = computed(() => md.render(cleanContent.value))
+const formatBytes = (bytes, decimals = 2) => {
+   if (!bytes || bytes === 0) return '0 B'
+   const k = 1024
+   const dm = decimals < 0 ? 0 : decimals
+   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+   const i = Math.floor(Math.log(bytes) / Math.log(k))
+   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
 
 const setupImageLightbox = async () => {
    await nextTick()
@@ -226,92 +323,240 @@ const initPlyr = async () => {
    }
 }
 
-watch(html, async () => {
-   await nextTick()
-   if (typeof window !== 'undefined') {
-      Prism.highlightAll()
-      initPlyr()
-      setupImageLightbox()
-   }
-})
-
-const readingTime = computed(() => {
-   const words = (note.value.content || '').trim().split(/\s+/).length
-   return Math.max(1, Math.ceil(words / 200))
-})
-
-useHead({
-   title: computed(() => note.value.title ? `${note.value.title} - Note Reader` : 'Note Reader')
-})
-
-const playClickSound = () => {
-   try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext
-      if (!AudioContext) return
-      const ctx = new AudioContext()
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(600, ctx.currentTime)
-      osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.035)
-      gain.gain.setValueAtTime(0.06, ctx.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035)
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.start()
-      osc.stop(ctx.currentTime + 0.035)
-   } catch { }
-}
-
-const goBack = () => {
-   playClickSound()
-   if (window.history.length > 1) {
-      router.back()
-   } else {
-      router.push('/')
-   }
-}
-
-const copyShareLink = async () => {
-   playClickSound()
-   try {
-      await navigator.clipboard.writeText(window.location.href)
-      copyStatus.value = 'Copied!'
-      setTimeout(() => { copyStatus.value = 'Share' }, 2000)
-   } catch { }
-}
-
-const formatDate = (v) => {
-   if (!v) return '-'
-   let val = typeof v === 'string' && !isNaN(Number(v)) ? Number(v) : v
-   if (typeof val === 'number' && val < 1e11) {
-      val = val * 1000
-   }
-   const d = new Date(val)
-   if (isNaN(d.getTime())) return '-'
-   return d.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-   })
-}
-
-onMounted(async () => {
-   if (typeof window !== 'undefined') window.addEventListener('keydown', handleKeydown)
-   try {
-      const r = await $api(`/api/notes/${route.params.id}`)
-      note.value = r.data
+watch([isPreview, previewHtml], async () => {
+   if (isPreview.value) {
       await nextTick()
       if (typeof window !== 'undefined') {
          Prism.highlightAll()
          initPlyr()
          setupImageLightbox()
       }
-   } catch (e) {
-      error.value = e.data?.message || 'Note not found or private'
-   } finally {
-      pending.value = false
    }
+})
+
+const check = async () => {
+   try {
+      const r = await $api('/api/admin/me')
+      if (!r?.data?.admin) {
+         isAdmin.value = false
+         router.replace('/login')
+         return
+      }
+      isAdmin.value = true
+      fetchNotes()
+   } catch {
+      isAdmin.value = false
+      router.replace('/login')
+   }
+}
+
+const logout = async () => {
+   try {
+      await $api('/api/admin/logout', { method: 'POST' })
+   } catch { }
+   isAdmin.value = false
+   router.push('/login')
+}
+
+const fetchNotes = async () => {
+   loading.value = true
+   try {
+      const r = await $api(`/api/notes?page=${page.value}&per_page=${perPage.value}`)
+      notes.value = r.data || []
+      totalNotes.value = r.meta?.total || notes.value.length
+      page.value = r.meta?.page || page.value
+   } finally {
+      loading.value = false
+   }
+}
+
+const goToPage = async (target) => {
+   page.value = Math.max(1, target)
+   await fetchNotes()
+}
+
+const handlePerPageChange = async (newPerPage) => {
+   perPage.value = newPerPage
+   page.value = 1
+   await fetchNotes()
+}
+
+const saveNote = async () => {
+   loading.value = true
+   try {
+      const payload = {
+         ...form.value,
+         tags: parsedTags.value
+      }
+      await $api(form.value.id ? `/api/notes/${form.value.id}` : '/api/notes', {
+         method: form.value.id ? 'PUT' : 'POST',
+         body: payload
+      })
+      resetForm()
+      goToPage(1)
+   } finally {
+      loading.value = false
+   }
+}
+
+const editNote = (n) => {
+   form.value = {
+      id: n.id,
+      title: n.title,
+      content: n.content,
+      thumbnail: n.thumbnail || '',
+      tags: Array.isArray(n.tags) ? n.tags.join(', ') : (n.tags || ''),
+      is_private: !!n.is_private
+   }
+}
+
+const removeNote = async (id) => {
+   if (!confirm('Delete this note?')) return
+   await $api(`/api/notes/${id}`, { method: 'DELETE' })
+   if (notes.value.length === 1 && page.value > 1) page.value--
+   fetchNotes()
+}
+
+const resetForm = () => {
+   form.value = { id: '', title: '', content: '', thumbnail: '', tags: '', is_private: true }
+   isPreview.value = false
+}
+
+const insertAtCursor = (text) => {
+   const el = editor.value
+   if (!el) {
+      form.value.content += text
+      return
+   }
+   const start = el.selectionStart ?? form.value.content.length
+   const end = el.selectionEnd ?? form.value.content.length
+   const before = form.value.content.slice(0, start)
+   const after = form.value.content.slice(end)
+   form.value.content = before + text + after
+   nextTick(() => {
+      el.focus()
+      const newPos = start + text.length
+      el.setSelectionRange(newPos, newPos)
+   })
+}
+
+const wrap = (a, b) => {
+   const el = editor.value
+   if (!el) return insertAtCursor(a + b)
+   const s = el.selectionStart, e = el.selectionEnd
+   form.value.content = form.value.content.slice(0, s) + a + form.value.content.slice(s, e) + b + form.value.content.slice(e)
+   nextTick(() => {
+      el.focus()
+      el.setSelectionRange(s + a.length, e + a.length)
+   })
+}
+
+const uploadThumbnail = async (ev) => {
+   const file = ev.target.files?.[0]
+   if (!file) return
+   isUploadingPhoto.value = true
+   try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const r = await $fetch('/api/upload', { method: 'POST', body: fd })
+      const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
+      form.value.thumbnail = relativeUrl
+   } catch (e) {
+      error.value = e.message || 'Thumbnail upload failed'
+   } finally {
+      isUploadingPhoto.value = false
+      if (thumbInput.value) thumbInput.value.value = ''
+   }
+}
+
+const buildGalleryHtml = (images) => {
+   const main = images[0]
+   const side = images.slice(1, 5)
+   const extra = images.length - 5
+
+   let html = '<div class="gallery-grid">'
+   html += `<div class="grid-item item-main"><img src="${main.url}" alt="${main.name}"></div>`
+   side.forEach((img, idx) => {
+      const isLast = idx === side.length - 1 && extra > 0
+      html += `<div class="grid-item"><img src="${img.url}" alt="${img.name}">`
+      if (isLast) html += `<div class="more-overlay">+${extra} Foto</div>`
+      html += `</div>`
+   })
+   html += '</div>'
+   return `\n${html}\n`
+}
+
+const uploadMediaFiles = async (ev) => {
+   const files = Array.from(ev.target.files || [])
+   if (!files.length) return
+   isUploadingPhoto.value = true
+   uploadProgressText.value = `Uploading (0/${files.length})...`
+
+   try {
+      const imageList = []
+      for (let i = 0; i < files.length; i++) {
+         const file = files[i]
+         uploadProgressText.value = `Uploading (${i + 1}/${files.length})...`
+         const fd = new FormData()
+         fd.append('file', file)
+         const r = await $fetch('/api/upload', { method: 'POST', body: fd })
+         const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
+
+         if (file.type.startsWith('image/')) {
+            imageList.push({ name: file.name, url: relativeUrl })
+         } else if (file.type.startsWith('video/')) {
+            insertAtCursor(`\n<video controls class="plyr-video" src="${relativeUrl}"></video>\n`)
+         } else if (file.type.startsWith('audio/')) {
+            insertAtCursor(`\n<audio controls class="plyr-audio" src="${relativeUrl}"></audio>\n`)
+         }
+      }
+
+      if (imageList.length > 0) {
+         if (imageList.length === 1) {
+            insertAtCursor(`\n![${imageList[0].name}](${imageList[0].url})\n`)
+         } else {
+            insertAtCursor(buildGalleryHtml(imageList))
+         }
+      }
+   } catch (e) {
+      error.value = e.message || 'Media upload failed'
+   } finally {
+      isUploadingPhoto.value = false
+      uploadProgressText.value = ''
+      if (mediaInput.value) mediaInput.value.value = ''
+   }
+}
+
+const uploadAttachmentFiles = async (ev) => {
+   const files = Array.from(ev.target.files || [])
+   if (!files.length) return
+   isUploadingPhoto.value = true
+   uploadProgressText.value = `Uploading (0/${files.length})...`
+
+   try {
+      for (let i = 0; i < files.length; i++) {
+         const file = files[i]
+         uploadProgressText.value = `Uploading (${i + 1}/${files.length})...`
+         const fd = new FormData()
+         fd.append('file', file)
+         const r = await $fetch('/api/upload', { method: 'POST', body: fd })
+         const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
+         const sizeStr = formatBytes(file.size)
+         const tag = `\n<div class="file-download-box"><div class="file-info"><div class="file-icon"><i class="bi bi-file-earmark-arrow-down-fill"></i></div><div class="file-text-col"><div class="file-name">${file.name}</div><div class="file-size">${sizeStr}</div></div></div><a href="${relativeUrl}" download="${file.name}" class="btn-download"><i class="bi bi-download"></i> Download</a></div>\n`
+         insertAtCursor(tag)
+      }
+   } catch (e) {
+      error.value = e.message || 'File upload failed'
+   } finally {
+      isUploadingPhoto.value = false
+      uploadProgressText.value = ''
+      if (fileInput.value) fileInput.value.value = ''
+   }
+}
+
+onMounted(() => {
+   check()
+   if (typeof window !== 'undefined') window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
@@ -321,7 +566,30 @@ onUnmounted(() => {
 
 <style scoped>
 .fs-xs {
-   font-size: 0.725rem;
+   font-size: 0.75rem;
+}
+
+.fs-sm {
+   font-size: 0.875rem;
+}
+
+.btn-xs {
+   font-size: 0.75rem;
+   padding: 0.2rem 0.5rem;
+}
+
+.btn-icon-only {
+   width: 32px;
+   height: 32px;
+   padding: 0;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   border-radius: 0.375rem;
+}
+
+.tracking-wider {
+   letter-spacing: 0.05em;
 }
 
 .text-color {
@@ -336,142 +604,111 @@ onUnmounted(() => {
    color: var(--app-secondary-text-color) !important;
 }
 
-.reader-max-width {
-   max-width: 780px;
-}
-
 .border-bottom {
    border-color: var(--app-border-color) !important;
 }
 
-.note-reader-card {
+.content-card,
+.note-editor-card {
    background-color: var(--app-card-bg);
    border: 1px solid var(--app-border-color);
    border-radius: 0.625rem;
    overflow: hidden;
 }
 
-.card-header-bar {
-   background-color: var(--app-bg);
-}
-
-.btn-action-pill {
-   font-size: 0.75rem;
-   padding: 0.25rem 0.6rem;
+.admin-icon-badge,
+.editor-badge {
+   width: 36px;
+   height: 36px;
    border-radius: 0.375rem;
-   display: inline-flex;
-   align-items: center;
-}
-
-.article-title {
-   font-size: 1.5rem;
-   font-weight: 700;
-   line-height: 1.3;
-   letter-spacing: -0.01em;
-}
-
-.tag-badge {
-   font-size: 0.7rem;
-   padding: 0.2rem 0.5rem;
-   border-radius: 0.25rem;
    background-color: var(--app-bg);
-   color: var(--app-secondary-text-color);
    border: 1px solid var(--app-border-color);
-   transition: color 0.2s ease, border-color 0.2s ease;
-}
-
-.tag-badge:hover {
-   color: var(--app-accent-color);
-   border-color: var(--app-border-color);
-}
-
-.pill-badge {
-   display: inline-flex;
-   align-items: center;
-   font-size: 0.65rem;
-   font-weight: 600;
-   padding: 0.2rem 0.5rem;
-   border-radius: 0.25rem;
-}
-
-.pill-badge.private {
-   background-color: rgba(220, 53, 69, 0.15);
-   color: #dc3545;
-   border: 1px solid rgba(220, 53, 69, 0.25);
-}
-
-.pill-badge.public {
-   background-color: rgba(25, 135, 84, 0.15);
-   color: #198754;
-   border: 1px solid rgba(25, 135, 84, 0.25);
-}
-
-.error-icon-circle {
-   width: 46px;
-   height: 46px;
-   margin: 0 auto;
-   border-radius: 50%;
-   background-color: rgba(220, 53, 69, 0.1);
-   border: 1px solid rgba(220, 53, 69, 0.2);
    display: flex;
    align-items: center;
    justify-content: center;
-   font-size: 1.3rem;
-   color: #dc3545;
+   color: var(--app-accent-color);
 }
 
-.skeleton-btn,
-.skeleton-pill,
-.skeleton-title,
-.skeleton-meta,
-.skeleton-line,
-.skeleton-image {
-   background: linear-gradient(90deg,
-         var(--app-bg) 25%,
-         var(--app-border-color) 50%,
-         var(--app-bg) 75%);
-   background-size: 200% 100%;
-   animation: shimmer 1.5s infinite linear;
+.editor-title {
+   font-weight: 700;
+   color: var(--app-text-color);
+   font-size: 0.95rem;
+}
+
+.editor-subtitle {
+   font-size: 0.7rem;
+   color: var(--app-secondary-text-color) !important;
+}
+
+.tag-preview-item {
+   font-size: 0.725rem;
+   padding: 0.25rem 0.6rem;
+   border-radius: 0.35rem;
+   background-color: var(--app-bg);
+   color: var(--app-text-color);
+   border: 1px solid var(--app-border-color);
+   font-weight: 600;
+}
+
+.thumb-preview-box {
+   width: 36px;
+   height: 36px;
    border-radius: 0.375rem;
+   overflow: hidden;
+   border: 1px solid var(--app-border-color);
+   background-color: var(--app-bg);
+   flex-shrink: 0;
 }
 
-.skeleton-btn {
-   width: 60px;
-   height: 28px;
-}
-
-.skeleton-pill {
-   width: 70px;
-   height: 20px;
-}
-
-.skeleton-title {
-   height: 24px;
-}
-
-.skeleton-meta {
-   width: 160px;
-   height: 14px;
-}
-
-.skeleton-line {
-   height: 14px;
-}
-
-.skeleton-image {
+.thumb-img {
    width: 100%;
-   height: 180px;
-   border-radius: 0.5rem;
+   height: 100%;
+   object-fit: cover;
 }
 
-@keyframes shimmer {
-   0% {
-      background-position: 200% 0;
-   }
+.thumb-letter-avatar {
+   width: 100%;
+   height: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-weight: 700;
+   font-size: 1rem;
+   color: var(--app-accent-color);
+   background-color: var(--app-bg);
+}
 
-   100% {
-      background-position: -200% 0;
-   }
+.note-textarea,
+.preview-box {
+   height: 278px;
+   padding: 0.375rem 0.75rem !important;
+}
+
+.note-textarea {
+   font-family: inherit;
+   resize: vertical;
+}
+
+.textarea-wrapper {
+   position: relative;
+}
+
+.preview-box {
+   background-color: var(--app-bg);
+   border-color: var(--app-border-color) !important;
+   overflow-y: auto;
+}
+
+.upload-overlay {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   background-color: rgba(28, 28, 30, 0.75);
+   border-radius: 0.375rem;
+   backdrop-filter: blur(2px);
+   z-index: 10;
 }
 
 .markdown-body {
