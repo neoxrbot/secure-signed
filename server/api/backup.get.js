@@ -13,7 +13,6 @@ export default defineEventHandler(async (event) => {
 
    const db = env.DB
 
-   // Ambil semua tabel
    const tables = await db.prepare(`
     SELECT name, sql
     FROM sqlite_master
