@@ -17,11 +17,13 @@ export default defineEventHandler(async (event) => {
    const expectedSecret = env?.CRON_SECRET || env?.ADMIN_SECRET || env?.SECRET
 
    if (!expectedSecret || secret !== expectedSecret) {
-      throw createError({ statusCode: 401, statusMessage: 'Unauthorized: Invalid secret token' })
+      setResponseStatus(event, 401)
+      return { status: false, msg: 'Unauthorized: Invalid secret token' }
    }
 
    if (!db) {
-      throw createError({ statusCode: 500, statusMessage: 'Database D1 binding not found' })
+      setResponseStatus(event, 500)
+      return { status: false, msg: 'Database D1 binding not found' }
    }
 
    try {
@@ -29,12 +31,7 @@ export default defineEventHandler(async (event) => {
       const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, 19)
       const fileName = `d1_backup_${dateStr}.sql`
 
-      let sqlDump = `-- ==========================================\n`
-      sqlDump += `-- Cloudflare D1 Database Dump\n`
-      sqlDump += `-- Export Date: ${now.toISOString()}\n`
-      sqlDump += `-- ==========================================\n\n`
-      sqlDump += `PRAGMA foreign_keys = OFF;\n`
-      sqlDump += `BEGIN TRANSACTION;\n\n`
+      let sqlDump = ''
 
       const { results: schemaResults } = await db.prepare(
          `SELECT type, name, sql FROM sqlite_master WHERE type IN ('table', 'index', 'trigger') AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY type DESC, name ASC`
@@ -43,9 +40,12 @@ export default defineEventHandler(async (event) => {
       const tables = (schemaResults || []).filter(item => item.type === 'table')
 
       for (const table of tables) {
-         sqlDump += `-- Table: ${table.name}\n`
          if (table.sql) {
-            sqlDump += `${table.sql};\n`
+            let createSql = table.sql.trim()
+            if (!createSql.includes('IF NOT EXISTS')) {
+               createSql = createSql.replace(/^CREATE TABLE\s+/i, 'CREATE TABLE IF NOT EXISTS ')
+            }
+            sqlDump += `${createSql};\n`
          }
 
          const { results: rows } = await db.prepare(`SELECT * FROM "${table.name}"`).all()
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
             const cols = Object.keys(rows[0]).map(c => `"${c}"`).join(', ')
             for (const row of rows) {
                const vals = Object.values(row).map(escapeSqlValue).join(', ')
-               sqlDump += `INSERT INTO "${table.name}" (${cols}) VALUES (${vals});\n`
+               sqlDump += `INSERT OR REPLACE INTO "${table.name}" (${cols}) VALUES (${vals});\n`
             }
          }
          sqlDump += `\n`
@@ -62,14 +62,17 @@ export default defineEventHandler(async (event) => {
 
       const otherSchema = (schemaResults || []).filter(item => item.type !== 'table')
       if (otherSchema.length > 0) {
-         sqlDump += `-- Indexes & Triggers\n`
          for (const item of otherSchema) {
-            if (item.sql) sqlDump += `${item.sql};\n`
+            if (item.sql) {
+               let createSql = item.sql.trim()
+               if (item.type === 'index' && !createSql.includes('IF NOT EXISTS')) {
+                  createSql = createSql.replace(/^CREATE INDEX\s+/i, 'CREATE INDEX IF NOT EXISTS ')
+               }
+               sqlDump += `${createSql};\n`
+            }
          }
          sqlDump += `\n`
       }
-
-      sqlDump += `COMMIT;\n`
 
       setHeader(event, 'Content-Type', 'text/x-sql; charset=utf-8')
       setHeader(event, 'Content-Disposition', `attachment; filename="${fileName}"`)
@@ -77,6 +80,7 @@ export default defineEventHandler(async (event) => {
 
       return sqlDump
    } catch (err) {
-      throw createError({ statusCode: 500, statusMessage: `Backup failed: ${err.message}` })
+      setResponseStatus(event, 500)
+      return { status: false, msg: `Backup failed: ${err.message}` }
    }
 })
