@@ -59,11 +59,19 @@
             <template v-else>
                <div v-for="note in displayNotes" :key="note.id" class="note-card-row"
                   :class="{ 'is-editing': activeEditId === note.id }">
-                  <div class="d-flex align-items-center justify-content-between gap-2 min-w-0">
-                     <NuxtLink :to="`/note/${note.id}`"
-                        class="note-row-title text-truncate fw-semibold text-decoration-none" :title="note.title">
-                        {{ note.title }}
-                     </NuxtLink>
+                  <div class="d-flex align-items-center justify-content-between gap-2 min-w-0 mb-2">
+                     <div class="d-flex align-items-center gap-2 min-w-0">
+                        <div class="list-thumb-box">
+                           <img v-if="note.thumbnail" :src="note.thumbnail" class="list-thumb-img" />
+                           <div v-else class="list-thumb-avatar">
+                              {{ getFirstLetter(note.title) }}
+                           </div>
+                        </div>
+                        <NuxtLink :to="`/note/${note.id}`"
+                           class="note-row-title text-truncate fw-semibold text-decoration-none" :title="note.title">
+                           {{ note.title }}
+                        </NuxtLink>
+                     </div>
 
                      <div class="action-buttons-group d-flex align-items-center gap-1 flex-shrink-0">
                         <button class="btn-action-pill edit-btn" title="Edit note" @click="emit('edit', note)">
@@ -73,6 +81,13 @@
                            <i class="bi bi-trash3-fill"></i>
                         </button>
                      </div>
+                  </div>
+
+                  <div v-if="note.tags && note.tags.length" class="d-flex gap-1 flex-wrap mb-2">
+                     <NuxtLink v-for="tag in getTagsList(note.tags)" :key="tag" :to="`/tag/${tag}`"
+                        class="tag-badge text-decoration-none">
+                        #{{ tag }}
+                     </NuxtLink>
                   </div>
 
                   <div class="note-item-divider my-2"></div>
@@ -143,6 +158,17 @@ const displayNotes = computed(() => {
    const q = searchQuery.value.toLowerCase()
    return list.filter(n => (n.title || '').toLowerCase().includes(q))
 })
+
+const getFirstLetter = (title = '') => {
+   const t = title.trim()
+   return t ? t.charAt(0).toUpperCase() : 'N'
+}
+
+const getTagsList = (tags) => {
+   if (Array.isArray(tags)) return tags
+   if (typeof tags === 'string') return tags.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean)
+   return []
+}
 
 const formatDate = (v) => {
    if (!v) return '-'
@@ -290,6 +316,47 @@ const formatDate = (v) => {
 
 .note-card-row.is-editing {
    background-color: var(--app-card-bg);
+}
+
+.list-thumb-box {
+   width: 28px;
+   height: 28px;
+   border-radius: 0.25rem;
+   overflow: hidden;
+   border: 1px solid var(--app-border-color);
+   background-color: var(--app-card-bg);
+   flex-shrink: 0;
+}
+
+.list-thumb-img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+}
+
+.list-thumb-avatar {
+   width: 100%;
+   height: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-weight: 700;
+   font-size: 0.75rem;
+   color: var(--app-accent-color);
+}
+
+.tag-badge {
+   font-size: 0.65rem;
+   padding: 0.1rem 0.35rem;
+   border-radius: 0.2rem;
+   background-color: var(--app-card-bg);
+   color: var(--app-secondary-text-color);
+   border: 1px solid var(--app-border-color);
+}
+
+.tag-badge:hover {
+   color: var(--app-accent-color);
+   border-color: var(--app-accent-color);
 }
 
 .note-item-divider {

@@ -8,9 +8,16 @@
                <p class="text-muted mb-0 fs-xs">Create, edit, and publish notes</p>
             </div>
          </div>
-         <button class="btn btn-outline-secondary d-flex align-items-center gap-1" @click="logout">
-            <i class="bi bi-box-arrow-right"></i> Logout
-         </button>
+         <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary btn-icon-only" @click="handleBackup" :disabled="isBackingUp"
+               title="Download Database Backup">
+               <span v-if="isBackingUp" class="spinner-border spinner-border-sm"></span>
+               <i v-else class="bi bi-database-down"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-icon-only" @click="logout" title="Logout">
+               <i class="bi bi-box-arrow-right"></i>
+            </button>
+         </div>
       </div>
 
       <div class="row g-4 align-items-start">
@@ -36,6 +43,42 @@
                         <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Title</label>
                         <input v-model="form.title" class="form-control" placeholder="Enter note title..." required
                            :disabled="loading || isUploadingPhoto">
+                     </div>
+
+                     <div class="mb-3">
+                        <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Thumbnail
+                           (Optional)</label>
+                        <div class="input-group">
+                           <input v-model="form.thumbnail" class="form-control"
+                              placeholder="Image URL or upload photo..." :disabled="loading || isUploadingPhoto">
+                           <button type="button" class="btn btn-outline-secondary" @click="thumbInput?.click()"
+                              :disabled="loading || isUploadingPhoto" title="Upload Thumbnail">
+                              <i class="bi bi-image"></i>
+                           </button>
+                        </div>
+                        <input ref="thumbInput" type="file" class="d-none" accept="image/*" @change="uploadThumbnail"
+                           :disabled="isUploadingPhoto">
+
+                        <div class="mt-2 d-flex align-items-center gap-2">
+                           <div class="thumb-preview-box">
+                              <img v-if="form.thumbnail" :src="form.thumbnail" class="thumb-img" />
+                              <div v-else class="thumb-letter-avatar">
+                                 {{ firstLetter }}
+                              </div>
+                           </div>
+                           <span class="fs-xs text-muted">{{ form.thumbnail ? 'Custom thumbnail image set' : 'Fallback letter avatar will be used' }}</span>
+                        </div>
+                     </div>
+
+                     <div class="mb-3">
+                        <label class="form-label fs-xs fw-bold text-uppercase tracking-wider text-muted">Tags (Comma
+                           Separated)</label>
+                        <input v-model="form.tags" class="form-control" placeholder="e.g. tech, nuxt, tutorial"
+                           :disabled="loading || isUploadingPhoto">
+                        <div v-if="parsedTags.length" class="d-flex gap-1 flex-wrap mt-2">
+                           <span v-for="tag in parsedTags" :key="tag" class="badge bg-secondary-subtle text-color">#{{
+                              tag }}</span>
+                        </div>
                      </div>
 
                      <div class="mb-3">
@@ -165,6 +208,7 @@ const router = useRouter()
 const isAdmin = useState('admin-status', () => false)
 
 const loading = ref(false)
+const isBackingUp = ref(false)
 const isUploadingPhoto = ref(false)
 const uploadProgressText = ref('')
 const isPreview = ref(false)
@@ -177,9 +221,20 @@ const totalNotes = ref(0)
 const editor = ref(null)
 const mediaInput = ref(null)
 const fileInput = ref(null)
-const form = ref({ id: '', title: '', content: '', is_private: true })
+const thumbInput = ref(null)
+const form = ref({ id: '', title: '', content: '', thumbnail: '', tags: '', is_private: true })
 
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
+
+const firstLetter = computed(() => {
+   const t = (form.value.title || '').trim()
+   return t ? t.charAt(0).toUpperCase() : 'N'
+})
+
+const parsedTags = computed(() => {
+   if (!form.value.tags) return []
+   return form.value.tags.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean)
+})
 
 const lightbox = reactive({
    isOpen: false,
@@ -219,6 +274,26 @@ const handleKeydown = (e) => {
    if (lightbox.isOpen) {
       if (e.key === 'ArrowRight') nextImage()
       if (e.key === 'ArrowLeft') prevImage()
+   }
+}
+
+const handleBackup = async () => {
+   isBackingUp.value = true
+   try {
+      const res = await $fetch('/api/backup?secret=neoxr', { responseType: 'blob' })
+      const blob = new Blob([res], { type: 'text/x-sql' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `d1_backup_${new Date().toISOString().slice(0, 10)}.sql`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      a.remove()
+   } catch (e) {
+      error.value = e.message || 'Backup failed'
+   } finally {
+      isBackingUp.value = false
    }
 }
 
@@ -349,9 +424,13 @@ const handlePerPageChange = async (newPerPage) => {
 const saveNote = async () => {
    loading.value = true
    try {
+      const payload = {
+         ...form.value,
+         tags: parsedTags.value
+      }
       await $api(form.value.id ? `/api/notes/${form.value.id}` : '/api/notes', {
          method: form.value.id ? 'PUT' : 'POST',
-         body: form.value
+         body: payload
       })
       resetForm()
       goToPage(1)
@@ -361,7 +440,14 @@ const saveNote = async () => {
 }
 
 const editNote = (n) => {
-   form.value = { id: n.id, title: n.title, content: n.content, is_private: !!n.is_private }
+   form.value = {
+      id: n.id,
+      title: n.title,
+      content: n.content,
+      thumbnail: n.thumbnail || '',
+      tags: Array.isArray(n.tags) ? n.tags.join(', ') : (n.tags || ''),
+      is_private: !!n.is_private
+   }
 }
 
 const removeNote = async (id) => {
@@ -372,7 +458,7 @@ const removeNote = async (id) => {
 }
 
 const resetForm = () => {
-   form.value = { id: '', title: '', content: '', is_private: true }
+   form.value = { id: '', title: '', content: '', thumbnail: '', tags: '', is_private: true }
    isPreview.value = false
 }
 
@@ -403,6 +489,24 @@ const wrap = (a, b) => {
       el.focus()
       el.setSelectionRange(s + a.length, e + a.length)
    })
+}
+
+const uploadThumbnail = async (ev) => {
+   const file = ev.target.files?.[0]
+   if (!file) return
+   isUploadingPhoto.value = true
+   try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const r = await $fetch('/api/upload', { method: 'POST', body: fd })
+      const relativeUrl = r.data.url.replace(/^https?:\/\/[^\/]+/, '')
+      form.value.thumbnail = relativeUrl
+   } catch (e) {
+      error.value = e.message || 'Thumbnail upload failed'
+   } finally {
+      isUploadingPhoto.value = false
+      if (thumbInput.value) thumbInput.value.value = ''
+   }
 }
 
 const buildGalleryHtml = (images) => {
@@ -514,6 +618,16 @@ onUnmounted(() => {
    padding: 0.2rem 0.5rem;
 }
 
+.btn-icon-only {
+   width: 32px;
+   height: 32px;
+   padding: 0;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   border-radius: 0.375rem;
+}
+
 .tracking-wider {
    letter-spacing: 0.05em;
 }
@@ -564,6 +678,34 @@ onUnmounted(() => {
 .editor-subtitle {
    font-size: 0.7rem;
    color: var(--app-secondary-text-color) !important;
+}
+
+.thumb-preview-box {
+   width: 36px;
+   height: 36px;
+   border-radius: 0.375rem;
+   overflow: hidden;
+   border: 1px solid var(--app-border-color);
+   background-color: var(--app-bg);
+   flex-shrink: 0;
+}
+
+.thumb-img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+}
+
+.thumb-letter-avatar {
+   width: 100%;
+   height: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-weight: 700;
+   font-size: 1rem;
+   color: var(--app-accent-color);
+   background-color: var(--app-bg);
 }
 
 .note-textarea,

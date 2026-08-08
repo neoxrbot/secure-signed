@@ -121,18 +121,21 @@ export async function cleanDatabase(db, urlRetentionDays = 30) {
    }
 }
 
-export async function createNote(db, { id, title, content, isPrivate }) {
+export async function createNote(db, { id, title, content, thumbnail, tags, isPrivate }) {
    const now = Math.floor(Date.now() / 1000)
+   const tagsStr = Array.isArray(tags) ? tags.join(', ') : (tags || '')
+
    await db.prepare(
-      'INSERT INTO notes (id, title, content, is_private, reads, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?5)'
-   ).bind(id, title, content, isPrivate ? 1 : 0, now).run()
+      'INSERT INTO notes (id, title, content, thumbnail, tags, is_private, reads, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7, ?7)'
+   ).bind(id, title, content, thumbnail || '', tagsStr, isPrivate ? 1 : 0, now).run()
+
    return getNoteById(db, id)
 }
 
 export async function listNotes(db, { includePrivate = false, limit = 20, offset = 0 } = {}) {
    const query = includePrivate
-      ? 'SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes ORDER BY created_at DESC LIMIT ?1 OFFSET ?2'
-      : 'SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes WHERE is_private = 0 ORDER BY created_at DESC LIMIT ?1 OFFSET ?2'
+      ? 'SELECT id, title, content, thumbnail, tags, is_private, reads, created_at, updated_at FROM notes ORDER BY created_at DESC LIMIT ?1 OFFSET ?2'
+      : 'SELECT id, title, content, thumbnail, tags, is_private, reads, created_at, updated_at FROM notes WHERE is_private = 0 ORDER BY created_at DESC LIMIT ?1 OFFSET ?2'
    const { results } = await db.prepare(query).bind(limit, offset).all()
    return results || []
 }
@@ -145,16 +148,19 @@ export async function countNotes(db, { includePrivate = false } = {}) {
    return Number(row?.total || 0)
 }
 
-export async function getNoteById(db, id) {
-   return db.prepare('SELECT id, title, content, is_private, reads, created_at, updated_at FROM notes WHERE id = ?1').bind(id).first()
+export async function updateNote(db, id, { title, content, thumbnail, tags, isPrivate }) {
+   const now = Math.floor(Date.now() / 1000)
+   const tagsStr = Array.isArray(tags) ? tags.join(', ') : (tags || '')
+
+   await db.prepare(
+      'UPDATE notes SET title = ?1, content = ?2, thumbnail = ?3, tags = ?4, is_private = ?5, updated_at = ?6 WHERE id = ?7'
+   ).bind(title, content, thumbnail || '', tagsStr, isPrivate ? 1 : 0, now, id).run()
+
+   return getNoteById(db, id)
 }
 
-export async function updateNote(db, id, { title, content, isPrivate }) {
-   const now = Math.floor(Date.now() / 1000)
-   await db.prepare(
-      'UPDATE notes SET title = ?1, content = ?2, is_private = ?3, updated_at = ?4 WHERE id = ?5'
-   ).bind(title, content, isPrivate ? 1 : 0, now, id).run()
-   return getNoteById(db, id)
+export async function getNoteById(db, id) {
+   return db.prepare('SELECT id, title, content, thumbnail, tags, is_private, reads, created_at, updated_at FROM notes WHERE id = ?1').bind(id).first()
 }
 
 export async function deleteNote(db, id) {

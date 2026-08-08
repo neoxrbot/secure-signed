@@ -1,14 +1,44 @@
 import { getCloudflareEnv } from '../../utils/cloudflare.js'
-import { requireAdmin } from '../../utils/admin-auth.js'
+import { isAdmin } from '../../utils/admin-auth.js'
 import { createNote } from '../../utils/database.js'
-const makeId = () => Math.random().toString(36).slice(2, 10)
+
+function generateId(length = 10) {
+   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+   let res = ''
+   for (let i = 0; i < length; i++) res += chars.charAt(Math.floor(Math.random() * chars.length))
+   return res
+}
+
 export default defineEventHandler(async (event) => {
-   await requireAdmin(event)
    const env = getCloudflareEnv(event)
-   const body = await readBody(event)
-   const title = String(body?.title || '').trim()
-   const content = String(body?.content || '').trim()
-   if (!title || !content) throw createError({ statusCode: 400, statusMessage: 'Title and content are required' })
-   const note = await createNote(env.DB, { id: makeId(), title, content, isPrivate: !!body?.is_private })
-   return { status: true, data: note }
+   const db = env?.DB
+
+   const admin = await isAdmin(event)
+   if (!admin) {
+      setResponseStatus(event, 401)
+      return { status: false, message: 'Unauthorized' }
+   }
+
+   const body = await readBody(event) || {}
+   if (!body.title || !body.content) {
+      setResponseStatus(event, 400)
+      return { status: false, message: 'Title and content are required' }
+   }
+
+   try {
+      const id = body.id || generateId(10)
+      const note = await createNote(db, {
+         id,
+         title: body.title,
+         content: body.content,
+         thumbnail: body.thumbnail,
+         tags: body.tags,
+         isPrivate: body.is_private
+      })
+
+      return { status: true, data: note }
+   } catch (err) {
+      setResponseStatus(event, 500)
+      return { status: false, message: err.message }
+   }
 })
