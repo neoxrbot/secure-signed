@@ -171,7 +171,7 @@ watch(isSidebarOpen, (isOpen) => { if (mobileSidebarInstance) isOpen ? mobileSid
 
 onMounted(() => {
    checkAdminStatus()
-   if (mobileSidebarRef.value && process.client) {
+   if (mobileSidebarRef.value && typeof window !== 'undefined') {
       mobileSidebarInstance = new Offcanvas(mobileSidebarRef.value, { backdrop: false, keyboard: true })
       mobileSidebarRef.value.addEventListener('hidden.bs.offcanvas', () => { isSidebarOpen.value = false })
    }
