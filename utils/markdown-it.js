@@ -8,34 +8,43 @@ const escapeHtml = (input) => String(input || '')
 const processInline = (input, allowHtml = true) => {
    let text = input || ''
 
+   const placeholders = []
+   const store = (htmlTag) => {
+      placeholders.push(htmlTag)
+      return `###PH_${placeholders.length - 1}###`
+   }
+
+   text = text.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g, (match, alt, src) => {
+      return store(`<img alt="${alt}" src="${src}">`)
+   })
+
+   text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+|mailto:[^\s)]+|tel:[^\s)]+)\)/g, (match, t, href) => {
+      return store(`<a href="${href}" target="_blank" rel="noopener noreferrer">${t}</a>`)
+   })
+
    if (allowHtml) {
-      text = text.replace(/<video\s+([\s\S]*?)><\/video>/gi, '###VIDEO_START###$1###VIDEO_END###')
-      text = text.replace(/<audio\s+([\s\S]*?)><\/audio>/gi, '###AUDIO_START###$1###AUDIO_END###')
-      text = text.replace(/<div\s+([\s\S]*?)>([\s\S]*?)<\/div>/gi, '###DIV_START###$1###DIV_MID###$2###DIV_END###')
-      text = text.replace(/<a\s+([\s\S]*?)>([\s\S]*?)<\/a>/gi, '###A_START###$1###A_MID###$2###A_END###')
-      text = text.replace(/<span\s+([\s\S]*?)>([\s\S]*?)<\/span>/gi, '###SPAN_START###$1###SPAN_MID###$2###SPAN_END###')
-      text = text.replace(/<i\s+([\s\S]*?)><\/i>/gi, '###I_START###$1###I_END###')
-      text = text.replace(/<img\s+([\s\S]*?)>/gi, '###IMG_START###$1###IMG_END###')
+      text = text.replace(/<video\s+([\s\S]*?)><\/video>/gi, (match) => store(match))
+      text = text.replace(/<audio\s+([\s\S]*?)><\/audio>/gi, (match) => store(match))
+      text = text.replace(/<div\s+([\s\S]*?)>([\s\S]*?)<\/div>/gi, (match) => store(match))
+      text = text.replace(/<a\s+([\s\S]*?)>([\s\S]*?)<\/a>/gi, (match) => store(match))
+      text = text.replace(/<span\s+([\s\S]*?)>([\s\S]*?)<\/span>/gi, (match) => store(match))
+      text = text.replace(/<i\s+([\s\S]*?)><\/i>/gi, (match) => store(match))
+      text = text.replace(/<img\s+([\s\S]*?)>/gi, (match) => store(match))
    }
 
    text = escapeHtml(text)
 
-   if (allowHtml) {
-      text = text.replace(/###VIDEO_START###([\s\S]*?)###VIDEO_END###/g, '<video $1></video>')
-      text = text.replace(/###AUDIO_START###([\s\S]*?)###AUDIO_END###/g, '<audio $1></audio>')
-      text = text.replace(/###DIV_START###([\s\S]*?)###DIV_MID###([\s\S]*?)###DIV_END###/g, '<div $1>$2</div>')
-      text = text.replace(/###A_START###([\s\S]*?)###A_MID###([\s\S]*?)###A_END###/g, '<a $1>$2</a>')
-      text = text.replace(/###SPAN_START###([\s\S]*?)###SPAN_MID###([\s\S]*?)###SPAN_END###/g, '<span $1>$2</span>')
-      text = text.replace(/###I_START###([\s\S]*?)###I_END###/g, '<i $1></i>')
-      text = text.replace(/###IMG_START###([\s\S]*?)###IMG_END###/g, '<img $1>')
-   }
-
-   return text
-      .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g, '<img alt="$1" src="$2">')
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
+   text = text
+      .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+      .replace(/`([^`]+)`/g, (match, code) => store(`<code>${escapeHtml(code)}</code>`))
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/_([^_]+)_/g, '<em>$1</em>')
+
+   placeholders.forEach((tag, idx) => {
+      text = text.replace(new RegExp(`###PH_${idx}###`, 'g'), tag)
+   })
+
+   return text
 }
 
 export default class MarkdownIt {
@@ -48,13 +57,18 @@ export default class MarkdownIt {
    render(source) {
       const lines = String(source || '').split(/\r?\n/)
       let html = ''
-      let listOpen = false
+      let ulOpen = false
+      let olOpen = false
       let codeOpen = false
 
-      const closeList = () => {
-         if (listOpen) {
+      const closeLists = () => {
+         if (ulOpen) {
             html += '</ul>'
-            listOpen = false
+            ulOpen = false
+         }
+         if (olOpen) {
+            html += '</ol>'
+            olOpen = false
          }
       }
 
@@ -62,7 +76,7 @@ export default class MarkdownIt {
          const trimmed = line.trim()
 
          if (line.startsWith('```')) {
-            closeList()
+            closeLists()
             if (codeOpen) {
                html += '</code></pre>'
                codeOpen = false
@@ -81,45 +95,71 @@ export default class MarkdownIt {
          }
 
          if (/^\s*---+\s*$/.test(line) || /^\s*\*\*\*+\s*$/.test(line)) {
-            closeList()
+            closeLists()
             html += '<hr>'
             continue
          }
 
-         if (this.options.html && /^<\/?(div|video|audio|section|article)\b/i.test(trimmed)) {
-            closeList()
+         if (this.options.html && /^<\/?(div|video|audio|section|article|table|thead|tbody|tr|th|td|iframe)\b/i.test(trimmed)) {
+            closeLists()
             html += `${trimmed}\n`
             continue
          }
 
          if (!trimmed) {
-            closeList()
+            closeLists()
             if (this.options.breaks) html += '<br>'
             continue
          }
 
-         const heading = line.match(/^(#{1,3})\s+(.+)$/)
+         const heading = line.match(/^(#{1,6})\s+(.+)$/)
          if (heading) {
-            closeList()
-            html += `<h${heading[1].length}>${processInline(heading[2], this.options.html)}</h${heading[1].length}>`
+            closeLists()
+            const level = heading[1].length
+            html += `<h${level}>${processInline(heading[2], this.options.html)}</h${level}>`
             continue
          }
 
-         const item = line.match(/^[-*]\s+(.+)$/)
-         if (item) {
-            if (!listOpen) {
-               html += '<ul>'
-               listOpen = true
+         const quote = line.match(/^>\s*(.+)$/)
+         if (quote) {
+            closeLists()
+            html += `<blockquote><p>${processInline(quote[1], this.options.html)}</p></blockquote>`
+            continue
+         }
+
+         const ulItem = line.match(/^[-*]\s+(.+)$/)
+         if (ulItem) {
+            if (olOpen) {
+               html += '</ol>'
+               olOpen = false
             }
-            html += `<li>${processInline(item[1], this.options.html)}</li>`
+            if (!ulOpen) {
+               html += '<ul>'
+               ulOpen = true
+            }
+            html += `<li>${processInline(ulItem[1], this.options.html)}</li>`
             continue
          }
 
-         closeList()
+         const olItem = line.match(/^(\d+)\.\s+(.+)$/)
+         if (olItem) {
+            if (ulOpen) {
+               html += '</ul>'
+               ulOpen = false
+            }
+            if (!olOpen) {
+               html += '<ol>'
+               olOpen = true
+            }
+            html += `<li>${processInline(olItem[1], this.options.html)}</li>`
+            continue
+         }
+
+         closeLists()
          html += `<p>${processInline(line, this.options.html)}</p>`
       }
 
-      closeList()
+      closeLists()
       if (codeOpen) {
          html += '</code></pre>'
       }
