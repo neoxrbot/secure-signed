@@ -52,7 +52,7 @@ export default defineNuxtConfig({
       public: {
          title: 'Secure Signed',
          tagline: 'Security & CDN Utilities',
-         baseURL: 'https://secure-signed.pages.dev',
+         baseURL: '/',
          popup: {
             title: 'Neoxr API',
             description: 'Cheap, fast, and developer-ready Web APIs. Integrate in minutes, scale with ease.',
