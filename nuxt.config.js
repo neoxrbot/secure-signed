@@ -1,6 +1,15 @@
 export default defineNuxtConfig({
    compatibilityDate: '2024-04-03',
    devtools: { enabled: false },
+   routeRules: {
+      '/api/**': {
+         cors: true,
+         headers: {
+            'access-control-allow-origin': '*',
+            'access-control-allow-methods': 'GET, POST, OPTIONS'
+         }
+      }
+   },
    devServer: {
       host: '0.0.0.0',
       port: 3000
