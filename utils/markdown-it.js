@@ -37,8 +37,8 @@ const processInline = (input, allowHtml = true) => {
    text = text
       .replace(/~~([^~]+)~~/g, '<del>$1</del>')
       .replace(/`([^`]+)`/g, (match, code) => store(`<code>${escapeHtml(code)}</code>`))
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/_([^_]+)_/g, '<em>$1</em>')
+      .replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>')
+      .replace(/(\*|_)(.*?)\1/g, '<em>$2</em>')
 
    placeholders.forEach((tag, idx) => {
       text = text.replace(new RegExp(`###PH_${idx}###`, 'g'), tag)
@@ -59,6 +59,7 @@ export default class MarkdownIt {
       let html = ''
       let ulOpen = false
       let olOpen = false
+      let quoteOpen = false
       let codeOpen = false
 
       const closeLists = () => {
@@ -72,11 +73,23 @@ export default class MarkdownIt {
          }
       }
 
+      const closeQuote = () => {
+         if (quoteOpen) {
+            html += '</blockquote>'
+            quoteOpen = false
+         }
+      }
+
+      const closeAll = () => {
+         closeLists()
+         closeQuote()
+      }
+
       for (const line of lines) {
          const trimmed = line.trim()
 
          if (line.startsWith('```')) {
-            closeLists()
+            closeAll()
             if (codeOpen) {
                html += '</code></pre>'
                codeOpen = false
@@ -95,15 +108,30 @@ export default class MarkdownIt {
          }
 
          if (/^\s*---+\s*$/.test(line) || /^\s*\*\*\*+\s*$/.test(line)) {
-            closeLists()
+            closeAll()
             html += '<hr>'
             continue
          }
 
          if (this.options.html && /^<\/?(div|video|audio|section|article|table|thead|tbody|tr|th|td|iframe)\b/i.test(trimmed)) {
-            closeLists()
+            closeAll()
             html += `${trimmed}\n`
             continue
+         }
+
+         if (/^>\s*(.*)$/.test(line)) {
+            closeLists()
+            const quoteContent = line.replace(/^>\s*/, '')
+            if (!quoteOpen) {
+               html += '<blockquote>'
+               quoteOpen = true
+            }
+            if (quoteContent.trim()) {
+               html += `<p>${processInline(quoteContent, this.options.html)}</p>`
+            }
+            continue
+         } else {
+            closeQuote()
          }
 
          if (!trimmed) {
@@ -112,18 +140,11 @@ export default class MarkdownIt {
             continue
          }
 
-         const heading = line.match(/^(#{1,6})\s+(.+)$/)
+         const heading = line.match(/^(#{1,6})\s+(.+?)\s*#*$/)
          if (heading) {
-            closeLists()
+            closeAll()
             const level = heading[1].length
             html += `<h${level}>${processInline(heading[2], this.options.html)}</h${level}>`
-            continue
-         }
-
-         const quote = line.match(/^>\s*(.+)$/)
-         if (quote) {
-            closeLists()
-            html += `<blockquote><p>${processInline(quote[1], this.options.html)}</p></blockquote>`
             continue
          }
 
@@ -155,11 +176,11 @@ export default class MarkdownIt {
             continue
          }
 
-         closeLists()
+         closeAll()
          html += `<p>${processInline(line, this.options.html)}</p>`
       }
 
-      closeLists()
+      closeAll()
       if (codeOpen) {
          html += '</code></pre>'
       }
