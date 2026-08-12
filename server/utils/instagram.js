@@ -1,18 +1,15 @@
-import appConfig from './app-config.js'
-import axios from 'axios'
-
 export default class Instagram {
    constructor(cookie) {
       this.setCookie(cookie)
    }
 
    setCookie = cookie => {
-      this.COOKIE = cookie
+      this.COOKIE = cookie || ""
       this.HEADERS = {
          "Accept": "*/*",
          "Accept-Language": "en-US,en;q=0.9",
          "Cache-Control": "no-cache",
-         "Cookie": this.COOKIE || "",
+         "Cookie": this.COOKIE,
          "DNT": "1",
          "Pragma": "no-cache",
          "Priority": "u=1, i",
@@ -37,7 +34,7 @@ export default class Instagram {
    }
 
    buildMsg = (message, status = false) => ({
-      creator: appConfig.watermark.creator,
+      creator: globalThis?.creator || '',
       status,
       msg: message
    })
@@ -56,24 +53,17 @@ export default class Instagram {
 
    getId = url => {
       const regex = /instagram.com\/(?:[A-Za-z0-9_.]+\/)?(p|reels|reel|stories)\/([A-Za-z0-9-_]+)/
-      const match = url.match(regex)
+      const match = url?.match(regex)
       return match && match[2] ? match[2] : null
    }
 
    extractValue = (text, startStr, endStr) => {
+      if (typeof text !== 'string') return null
       const startIndex = text.indexOf(startStr)
-
-      if (startIndex === -1) {
-         return null
-      }
-
+      if (startIndex === -1) return null
       const start = startIndex + startStr.length
       const end = text.indexOf(endStr, start)
-
-      if (end === -1) {
-         return null
-      }
-
+      if (end === -1) return null
       return text.slice(start, end)
    }
 
@@ -86,86 +76,92 @@ export default class Instagram {
    })
 
    parsing = items => {
-      let caption, taken_at, data = []
-      items.map(v => {
+      let taken_at, data = []
+      if (!Array.isArray(items)) return { taken_at: null, data: [] }
+      items.forEach(v => {
          taken_at = v.taken_at
          if (v.media_type == 1) {
             data.push({
                type: 'jpg',
-               url: v.image_versions2.candidates[0].url
+               url: v.image_versions2?.candidates?.[0]?.url
             })
          } else if (v.media_type == 2) {
             data.push({
                type: 'mp4',
-               url: v.video_versions[1].url
+               url: v.video_versions?.[1]?.url || v.video_versions?.[0]?.url
             })
-         } else if (v.media_type == 8) {
-            v.carousel_media.map(x => {
+         } else if (v.media_type == 8 && Array.isArray(v.carousel_media)) {
+            v.carousel_media.forEach(x => {
                if (x.media_type == 1) {
                   data.push({
                      type: 'jpg',
-                     url: x.image_versions2.candidates[0].url
+                     url: x.image_versions2?.candidates?.[0]?.url
                   })
                } else if (x.media_type == 2) {
                   data.push({
                      type: 'mp4',
-                     url: x.video_versions[1].url
+                     url: x.video_versions?.[1]?.url || x.video_versions?.[0]?.url
                   })
                }
             })
          }
       })
-      return ({
-         taken_at,
-         data
-      })
+      return ({ taken_at, data })
    }
 
    getProfile = async username => {
       try {
-         const profileUrl = `https://www.instagram.com/${username}/`
-         const { data: html } = await axios.get(profileUrl, {
-            headers: this.HEADERS,
-            validateStatus: () => true
+         const res = await fetch(`https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`, {
+            headers: this.HEADERS
          })
+         const body = await res.json().catch(() => null)
 
-         const creds = this.getCreds(html)
+         let result = body?.data?.user
+         if (!result) {
+            const profileUrl = `https://www.instagram.com/${username}/`
+            const resHtml = await fetch(profileUrl, { headers: this.HEADERS })
+            const html = await resHtml.text().catch(() => '')
 
-         if (!creds.id || !creds.fb_dtsg) return this.buildMsg('Failed to extract necessary credentials!')
+            const creds = this.getCreds(html)
 
-         const params = new URLSearchParams({
-            fb_api_caller_class: 'RelayModern',
-            fb_api_req_friendly_name: 'PolarisProfilePageContentQuery',
-            fb_dtsg: creds.fb_dtsg,
-            lsd: creds.lsd,
-            variables: JSON.stringify({
-               enable_integrity_filters: true,
-               id: creds.id,
-               __relay_internal__pv__PolarisCannesGuardianExperienceEnabledrelayprovider: true,
-               __relay_internal__pv__PolarisCASB976ProfileEnabledrelayprovider: false,
-               __relay_internal__pv__PolarisWebSchoolsEnabledrelayprovider: false,
-               __relay_internal__pv__PolarisRepostsConsumptionEnabledrelayprovider: true,
-               __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
-               __relay_internal__pv__PolarisLongformEnabledrelayprovider: false
-            }),
-            doc_id: '38611279431804694'
-         })
+            if (!creds.id || !creds.fb_dtsg) return this.buildMsg('Failed to extract necessary credentials!')
 
-         const { data: json } = await axios.post('https://www.instagram.com/api/graphql', params, {
-            headers: {
-               ...this.HEADERS,
-               'X-Fb-Lsd': creds.lsd,
-               'X-Fb-Friendly-Name': 'PolarisProfilePageContentQuery'
-            },
-            validateStatus: () => true
-         })
+            const params = new URLSearchParams({
+               fb_api_caller_class: 'RelayModern',
+               fb_api_req_friendly_name: 'PolarisProfilePageContentQuery',
+               fb_dtsg: creds.fb_dtsg,
+               lsd: creds.lsd,
+               variables: JSON.stringify({
+                  enable_integrity_filters: true,
+                  id: creds.id,
+                  __relay_internal__pv__PolarisCannesGuardianExperienceEnabledrelayprovider: true,
+                  __relay_internal__pv__PolarisCASB976ProfileEnabledrelayprovider: false,
+                  __relay_internal__pv__PolarisWebSchoolsEnabledrelayprovider: false,
+                  __relay_internal__pv__PolarisRepostsConsumptionEnabledrelayprovider: true,
+                  __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false,
+                  __relay_internal__pv__PolarisLongformEnabledrelayprovider: false
+               }),
+               doc_id: '38611279431804694'
+            })
 
-         const result = json?.data?.user
+            const resGql = await fetch('https://www.instagram.com/api/graphql', {
+               method: 'POST',
+               headers: {
+                  ...this.HEADERS,
+                  'X-Fb-Lsd': creds.lsd,
+                  'X-Fb-Friendly-Name': 'PolarisProfilePageContentQuery'
+               },
+               body: params
+            })
+            const json = await resGql.json().catch(() => null)
+
+            result = json?.data?.user
+         }
 
          if (!result) return this.buildMsg('Account not found!')
 
          return {
-            creator: appConfig.watermark.creator,
+            creator: globalThis?.creator || '',
             status: true,
             data: result
          }
@@ -180,12 +176,10 @@ export default class Instagram {
          const user = await this.getProfile(username)
          if (!user.status) return this.buildMsg(user.msg)
 
-         if (user.data.is_private) return this.buildMsg('This account is private!')
+         if (user.data?.is_private) return this.buildMsg('This account is private!')
 
-         const { data: html } = await axios.get(`https://www.instagram.com/${username}/`, {
-            headers: this.HEADERS,
-            validateStatus: () => true
-         })
+         const resHtml = await fetch(`https://www.instagram.com/${username}/`, { headers: this.HEADERS })
+         const html = await resHtml.text().catch(() => '')
 
          const creds = this.getCreds(html)
 
@@ -203,14 +197,16 @@ export default class Instagram {
             doc_id: '28331744683105260'
          })
 
-         const { data: json } = await axios.post('https://www.instagram.com/graphql/query', params, {
+         const resQuery = await fetch('https://www.instagram.com/graphql/query', {
+            method: 'POST',
             headers: {
                ...this.HEADERS,
                'X-Fb-Lsd': creds.lsd,
                'X-Fb-Friendly-Name': 'PolarisStoriesV3ReelPageStandaloneQuery'
             },
-            validateStatus: () => true
+            body: params
          })
+         const json = await resQuery.json().catch(() => null)
 
          const items = json?.data?.xdt_api__v1__feed__reels_media?.reels_media?.[0]?.items
          if (!items?.length) return this.buildMsg('Stories empty')
@@ -218,7 +214,7 @@ export default class Instagram {
          const stories = this.parsing(items).data
 
          return {
-            creator: appConfig.watermark.creator,
+            creator: globalThis?.creator || '',
             status: true,
             data: stories
          }
@@ -235,12 +231,10 @@ export default class Instagram {
          const user = await this.getProfile(username)
          if (!user.status) return this.buildMsg(user.msg)
 
-         if (user.data.is_private) return this.buildMsg('This account is private!')
+         if (user.data?.is_private) return this.buildMsg('This account is private!')
 
-         const { data: html } = await axios.get(`https://www.instagram.com/${username}/`, {
-            headers: this.HEADERS,
-            validateStatus: () => true
-         })
+         const resHtml = await fetch(`https://www.instagram.com/${username}/`, { headers: this.HEADERS })
+         const html = await resHtml.text().catch(() => '')
 
          const creds = this.getCreds(html)
 
@@ -300,7 +294,8 @@ export default class Instagram {
                server_timestamps: true
             })
 
-            const { data: body } = await axios.post(`https://www.instagram.com/graphql/query`, params, {
+            const resQuery = await fetch(`https://www.instagram.com/graphql/query`, {
+               method: 'POST',
                headers: {
                   ...this.HEADERS,
                   'X-Fb-Lsd': creds.lsd,
@@ -311,8 +306,9 @@ export default class Instagram {
                   }),
                   'X-Root-Field-Name': 'xdt_api__v1__feed__user_timeline_graphql_connection',
                },
-               validateStatus: () => true
+               body: params
             })
+            const body = await resQuery.json().catch(() => null)
 
             const result = body?.data?.xdt_api__v1__feed__user_timeline_graphql_connection
             if (!result) {
@@ -353,16 +349,16 @@ export default class Instagram {
          if (!postId) throw new Error('Invalid URL')
          const id = this.toId(postId)
 
-         const { data: body } = await axios.get(`https://www.instagram.com/api/v1/media/${id}/info/`, {
-            headers: this.HEADERS,
-            validateStatus: () => true
+         const res = await fetch(`https://www.instagram.com/api/v1/media/${id}/info/`, {
+            headers: this.HEADERS
          })
+         const body = await res.json().catch(() => null)
 
-         const result = this.parsing(body.items)
+         const result = this.parsing(body?.items || [])
          if (!result?.data?.length) return this.buildMsg('No media found!')
 
          return {
-            creator: appConfig.watermark.creator,
+            creator: globalThis?.creator || '',
             status: true,
             data: result.data
          }
@@ -381,7 +377,7 @@ export default class Instagram {
          const allPosts = result.edges.map(edge => this.parsing([edge.node]))
 
          return {
-            creator: appConfig.watermark.creator,
+            creator: globalThis?.creator || '',
             status: true,
             count: allPosts.length,
             data: allPosts.map(v => v.data).flat()
