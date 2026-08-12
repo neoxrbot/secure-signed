@@ -1,6 +1,7 @@
 name = "securly-sign"
 compatibility_date = '2026-06-25'
 pages_build_output_dir = "dist"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 BOT_TOKEN = '1931631238:AAGzOD4od2D7SH8I_0ZiVQwNCMHW39ss1kA'
