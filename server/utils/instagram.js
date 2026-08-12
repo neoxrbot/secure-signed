@@ -129,7 +129,8 @@ export default class Instagram {
       try {
          const profileUrl = `https://www.instagram.com/${username}/`
          const { data: html } = await axios.get(profileUrl, {
-            headers: this.HEADERS
+            headers: this.HEADERS,
+            validateStatus: () => true
          })
 
          const creds = this.getCreds(html)
@@ -159,7 +160,8 @@ export default class Instagram {
                ...this.HEADERS,
                'X-Fb-Lsd': creds.lsd,
                'X-Fb-Friendly-Name': 'PolarisProfilePageContentQuery'
-            }
+            },
+            validateStatus: () => true
          })
 
          const result = json?.data?.user
@@ -185,7 +187,8 @@ export default class Instagram {
          if (user.data.is_private) return this.buildMsg('This account is private!')
 
          const { data: html } = await axios.get(`https://www.instagram.com/${username}/`, {
-            headers: this.HEADERS
+            headers: this.HEADERS,
+            validateStatus: () => true
          })
 
          const creds = this.getCreds(html)
@@ -209,7 +212,8 @@ export default class Instagram {
                ...this.HEADERS,
                'X-Fb-Lsd': creds.lsd,
                'X-Fb-Friendly-Name': 'PolarisStoriesV3ReelPageStandaloneQuery'
-            }
+            },
+            validateStatus: () => true
          })
 
          const items = json?.data?.xdt_api__v1__feed__reels_media?.reels_media?.[0]?.items
@@ -238,7 +242,8 @@ export default class Instagram {
          if (user.data.is_private) return this.buildMsg('This account is private!')
 
          const { data: html } = await axios.get(`https://www.instagram.com/${username}/`, {
-            headers: this.HEADERS
+            headers: this.HEADERS,
+            validateStatus: () => true
          })
 
          const creds = this.getCreds(html)
@@ -309,7 +314,8 @@ export default class Instagram {
                      'X-Fb-Friendly-Name': 'PolarisProfilePostsQuery',
                   }),
                   'X-Root-Field-Name': 'xdt_api__v1__feed__user_timeline_graphql_connection',
-               }
+               },
+               validateStatus: () => true
             })
 
             const result = body?.data?.xdt_api__v1__feed__user_timeline_graphql_connection
@@ -352,7 +358,8 @@ export default class Instagram {
          const id = this.toId(postId)
 
          const { data: body } = await axios.get(`https://www.instagram.com/api/v1/media/${id}/info/`, {
-            headers: this.HEADERS
+            headers: this.HEADERS,
+            validateStatus: () => true
          })
 
          const result = this.parsing(body.items)
@@ -389,13 +396,3 @@ export default class Instagram {
       }
    }
 }
-
-
-const ig = new Instagram('datr=zd5Iamb80_ySk3g3WnGAxxGI;ig_nrcb=1;ds_user_id=61419416002;csrftoken=j2ml7urpDn1yBBCcnBIm1I;ig_did=E3764B33-7EEE-454A-AA17-5753138C7004;wd=1920x959;mid=akje0gAEAAEqztMEyI_OabhYKN8a;sessionid=61419416002%3A2ClCt0lzBVL52G%3A17%3AAYjadx9Rh05nKBfpHKl3gd3K-QvuRBx2dHH7gd1MHg;rur="CCO614194160021814698004:01ff5f4888c26dada409eca4ff0dcb3b6110cd777a7dad0e8f134dd1d159c1506f0ac1c6"')
-
-// ig.getProfile('akatsukireii').then(console.log).catch(console.error)
-// ig.fetch('https://www.instagram.com/p/Db5ihiZE9mG/?utm_source=ig_web_copy_link&igsh=NTc4MTIwNjQ2YQ==').then(console.log).catch(console.error)
-ig.fetchAllPosts('gsl.suou', { getAll: false }).then(console.log).catch(console.error)
-// ig.fetchAllPosts(process.argv[2] || 'gsl.suou', { first: 12, after: null, getAll: false }).then(console.log).catch(console.error)
-
-
