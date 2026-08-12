@@ -44,11 +44,11 @@ export default class Instagram {
 
    toId = shortcode => {
       const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
-      let id = 0n
+      let id = BigInt(0)
       for (let i = 0; i < shortcode.length; i++) {
          const index = alphabet.indexOf(shortcode[i])
          if (index !== -1) {
-            id = id * 64n + BigInt(index)
+            id = id * BigInt(64) + BigInt(index)
          }
       }
       return id.toString()
