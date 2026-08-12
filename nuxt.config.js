@@ -26,7 +26,10 @@ export default defineNuxtConfig({
    },
    ssr: false,
    nitro: {
-      preset: 'cloudflare-pages'
+      preset: 'cloudflare-pages',
+      cloudflare: {
+         nodeCompat: true
+      }
    },
    modules: ['@pinia/nuxt'],
    srcDir: '.',

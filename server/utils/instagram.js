@@ -1,4 +1,5 @@
 import appConfig from './app-config.js'
+import axios from 'axios'
 
 export default class Instagram {
    constructor(cookie) {
