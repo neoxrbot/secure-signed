@@ -1,6 +1,3 @@
-import bigInt from 'big-integer'
-import axios from 'axios'
-
 import appConfig from './app-config.js'
 
 export default class Instagram {
@@ -45,17 +42,15 @@ export default class Instagram {
    })
 
    toId = shortcode => {
-      const lower = 'abcdefghijklmnopqrstuvwxyz'
-      const upper = lower.toUpperCase()
-      const numbers = '0123456789'
-      const ig_alphabet = upper + lower + numbers + '-_'
-      const bigint_alphabet = numbers + lower
-      const o = shortcode.replace(/\S/g, m => {
-         var c = ig_alphabet.indexOf(m)
-         var b = bigint_alphabet.charAt(c)
-         return (b != "") ? b : `<${c}>`
-      })
-      return bigInt(o, 64).toString(10)
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+      let id = 0n
+      for (let i = 0; i < shortcode.length; i++) {
+         const index = alphabet.indexOf(shortcode[i])
+         if (index !== -1) {
+            id = id * 64n + BigInt(index)
+         }
+      }
+      return id.toString()
    }
 
    getId = url => {
