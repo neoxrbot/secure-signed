@@ -1,6 +1,8 @@
 import bigInt from 'big-integer'
 import axios from 'axios'
 
+import appConfig from './app-config.js'
+
 export default class Instagram {
    constructor(cookie) {
       this.setCookie(cookie)
@@ -37,7 +39,7 @@ export default class Instagram {
    }
 
    buildMsg = (message, status = false) => ({
-      creator: global.creator,
+      creator: appConfig.watermark.creator,
       status,
       msg: message
    })
@@ -165,7 +167,7 @@ export default class Instagram {
          if (!result) return this.buildMsg('Account not found!')
 
          return {
-            creator: global.creator,
+            creator: appConfig.watermark.creator,
             status: true,
             data: result
          }
@@ -216,7 +218,7 @@ export default class Instagram {
          const stories = this.parsing(items).data
 
          return {
-            creator: global.creator,
+            creator: appConfig.watermark.creator,
             status: true,
             data: stories
          }
@@ -357,7 +359,7 @@ export default class Instagram {
          if (!result?.data?.length) return this.buildMsg('No media found!')
 
          return {
-            creator: global.creator,
+            creator: appConfig.watermark.creator,
             status: true,
             data: result.data
          }
@@ -376,7 +378,7 @@ export default class Instagram {
          const allPosts = result.edges.map(edge => this.parsing([edge.node]))
 
          return {
-            creator: global.creator,
+            creator: appConfig.watermark.creator,
             status: true,
             count: allPosts.length,
             data: allPosts.map(v => v.data).flat()
