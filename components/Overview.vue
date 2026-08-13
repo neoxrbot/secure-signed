@@ -44,16 +44,21 @@
 
          <OverviewChart :data="stats.weekly" />
 
-         <div class="notes-slider border-top pt-3">
+         <div class="notes-slider">
             <div class="d-flex align-items-center justify-content-between mb-2">
                <span class="fs-xs fw-bold text-muted text-uppercase">Latest Notes</span>
+               <NuxtLink to="/notes" class="fs-xs text-muted text-decoration-none view-all-link">
+                  View All <i class="bi bi-chevron-right ms-1"></i>
+               </NuxtLink>
             </div>
             <Transition name="fade" mode="out-in">
                <NuxtLink v-if="activeNote" :key="activeNote.id" :to="`/note/${activeNote.id}`"
                   class="note-slide-card text-decoration-none">
-                  <div class="note-grid-preview">
-                     <div v-for="cellIdx in noteCells" :key="cellIdx" class="note-cell"
-                        :class="{ 'active': cellIdx === activeIndex }"></div>
+                  <div class="note-thumb-box">
+                     <img v-if="activeNote.thumbnail" :src="activeNote.thumbnail" class="note-thumb-img" />
+                     <div v-else class="note-thumb-avatar">
+                        {{ getFirstLetter(activeNote.title) }}
+                     </div>
                   </div>
                   <div class="min-w-0">
                      <div class="fs-sm fw-bold text-color text-truncate">{{ activeNote.title }}</div>
@@ -90,7 +95,12 @@ const notes = ref([])
 const activeIndex = ref(0)
 let timer = null
 const activeNote = computed(() => notes.value[activeIndex.value] || null)
-const noteCells = computed(() => Array.from({ length: Math.min(notes.value.length || 1, 4) }, (_, i) => i))
+
+const getFirstLetter = (title = '') => {
+   const t = title.trim()
+   return t ? t.charAt(0).toUpperCase() : 'N'
+}
+
 const noteExcerpt = (content = '') => content.replace(/[#*_`>\-!\[\]()]/g, '').slice(0, 90)
 
 const fetchNotes = async () => {
@@ -119,9 +129,17 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
    font-size: 0.875rem;
 }
 
+.view-all-link {
+   transition: color 0.2s ease;
+}
+
+.view-all-link:hover {
+   color: var(--app-accent-color) !important;
+}
+
 .note-slide-card {
    display: grid;
-   grid-template-columns: 54px minmax(0, 1fr);
+   grid-template-columns: 50px minmax(0, 1fr);
    gap: 0.75rem;
    align-items: center;
    min-height: 74px;
@@ -135,23 +153,32 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
    display: flex;
 }
 
-.note-grid-preview {
-   display: grid;
-   grid-template-columns: repeat(2, 1fr);
-   gap: 4px;
-}
-
-.note-cell {
-   aspect-ratio: 1 / 1;
-   border-radius: 0.3rem;
-   background: var(--app-card-bg);
+.note-thumb-box {
+   width: 50px;
+   height: 50px;
+   border-radius: 0.375rem;
+   overflow: hidden;
    border: 1px solid var(--app-border-color);
-   transition: background-color 0.3s ease, border-color 0.3s ease;
+   background-color: var(--app-card-bg);
+   flex-shrink: 0;
 }
 
-.note-cell.active {
-   background: var(--app-accent-color);
-   border-color: var(--app-accent-color);
+.note-thumb-img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+}
+
+.note-thumb-avatar {
+   width: 100%;
+   height: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-weight: 700;
+   font-size: 1.1rem;
+   color: var(--app-accent-color);
+   background-color: var(--app-bg);
 }
 
 .min-w-0 {
@@ -170,8 +197,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
    color: var(--app-secondary-text-color) !important;
 }
 
-.border-bottom,
-.border-top {
+.border-bottom {
    border-color: var(--app-border-color) !important;
 }
 
