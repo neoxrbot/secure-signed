@@ -107,6 +107,15 @@ import { useRoute, useRouter, useNuxtApp, useHead } from '#app'
 
 import Prism from 'prismjs'
 import 'prismjs/themes/prism-tomorrow.css'
+import 'prismjs/components/prism-clike'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/components/prism-typescript'
+import 'prismjs/components/prism-css'
+import 'prismjs/components/prism-json'
+import 'prismjs/components/prism-bash'
+import 'prismjs/components/prism-python'
+import 'prismjs/components/prism-sql'
+import 'prismjs/components/prism-markup'
 
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
@@ -226,13 +235,19 @@ const initPlyr = async () => {
    }
 }
 
-watch(html, async () => {
+const highlightCode = async () => {
    await nextTick()
    if (typeof window !== 'undefined') {
-      Prism.highlightAll()
-      initPlyr()
-      setupImageLightbox()
+      setTimeout(() => {
+         Prism.highlightAll()
+      }, 50)
    }
+}
+
+watch(html, async () => {
+   await highlightCode()
+   initPlyr()
+   setupImageLightbox()
 })
 
 const readingTime = computed(() => {
@@ -301,12 +316,9 @@ onMounted(async () => {
    try {
       const r = await $api(`/api/notes/${route.params.id}`)
       note.value = r.data
-      await nextTick()
-      if (typeof window !== 'undefined') {
-         Prism.highlightAll()
-         initPlyr()
-         setupImageLightbox()
-      }
+      await highlightCode()
+      initPlyr()
+      setupImageLightbox()
    } catch (e) {
       error.value = e.data?.message || 'Note not found or private'
    } finally {
