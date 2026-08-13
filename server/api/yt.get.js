@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
       const yt = await Innertube.create();
 
-      const video = await yt.getInfo("jNQXAC9IVRw");
+      const video = await yt.getBasicInfo('IAT2PlWR1Cg');
 
       return video
    } catch (err) {
