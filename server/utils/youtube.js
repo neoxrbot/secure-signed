@@ -59,7 +59,9 @@ export default class YouTube {
             throw new Error(`HTTP ${res.status}: ${errorText.substring(0, 200)}`);
          }
 
-         const data = await res.json();
+         const data = await res.json().catch(() => null)
+
+         return data
 
          if (!data || !data.videoDetails) {
             throw new Error('No videoDetails in response');
