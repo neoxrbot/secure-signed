@@ -76,6 +76,9 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useNuxtApp } from '#app'
+
+const { $api } = useNuxtApp()
 
 defineProps({
    stats: { type: Object, default: () => ({}) },
@@ -92,7 +95,7 @@ const noteExcerpt = (content = '') => content.replace(/[#*_`>\-!\[\]()]/g, '').s
 
 const fetchNotes = async () => {
    try {
-      const response = await $fetch('/api/notes?public=1')
+      const response = await $api('/api/notes?public=1')
       notes.value = (response.data || []).slice(0, 4)
    } catch (error) {
       notes.value = []

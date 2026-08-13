@@ -65,7 +65,7 @@
                      <span><i class="bi bi-calendar3 me-1 opacity-75"></i>{{ formatDate(note.created_at) }}</span>
                   </div>
 
-                  <div v-if="getTagsList(note.tags).length" class="d-flex gap-2 flex-wrap mb-4">
+                  <div v-if="getTagsList(note.tags).length" class="d-flex gap-2 flex-wrap mb-3">
                      <NuxtLink v-for="tag in getTagsList(note.tags)" :key="tag" :to="`/tag/${tag}`"
                         class="tag-badge text-decoration-none">
                         #{{ tag }}
@@ -372,8 +372,8 @@ onUnmounted(() => {
 
 .tag-badge {
    font-size: 0.725rem;
-   padding: 0.25rem 0.6rem;
-   border-radius: 0.35rem;
+   padding: 0.2rem 0.55rem;
+   border-radius: 0.25rem;
    background-color: var(--app-bg);
    color: var(--app-secondary-text-color);
    border: 1px solid var(--app-border-color);
@@ -482,7 +482,7 @@ onUnmounted(() => {
 
 .markdown-body :deep(p) {
    margin-top: 0 !important;
-   margin-bottom: 0.35rem !important;
+   margin-bottom: 0.2rem !important;
 }
 
 .markdown-body :deep(p:last-child) {
@@ -497,15 +497,15 @@ onUnmounted(() => {
 .markdown-body :deep(h6) {
    color: var(--app-text-color);
    font-weight: 700;
-   margin-top: 0.75rem !important;
-   margin-bottom: 0.25rem !important;
+   margin-top: 0.5rem !important;
+   margin-bottom: 0.2rem !important;
    line-height: 1.3;
 }
 
 .markdown-body :deep(hr) {
    height: 1px;
    padding: 0;
-   margin: 0.75rem 0 !important;
+   margin: 0.4rem 0 !important;
    background-color: var(--app-border-color);
    border: none;
 }
@@ -513,12 +513,12 @@ onUnmounted(() => {
 .markdown-body :deep(ul),
 .markdown-body :deep(ol) {
    padding-left: 1.25rem;
-   margin-top: 0.25rem !important;
-   margin-bottom: 0.35rem !important;
+   margin-top: 0.2rem !important;
+   margin-bottom: 0.2rem !important;
 }
 
 .markdown-body :deep(li) {
-   margin-bottom: 0.15rem;
+   margin-bottom: 0.1rem;
 }
 
 .markdown-body :deep(a) {
@@ -530,20 +530,21 @@ onUnmounted(() => {
 .markdown-body :deep(code) {
    background-color: var(--app-bg);
    color: var(--app-accent-color);
-   padding: 0.15rem 0.35rem;
+   padding: 0.12rem 0.3rem;
    border-radius: 0.25rem;
    font-size: 0.85em;
    border: 1px solid var(--app-border-color);
 }
 
-.markdown-body :deep(pre) {
-   background-color: var(--app-bg);
-   border: 1px solid var(--app-border-color);
-   padding: 0.75rem 1rem;
-   border-radius: 0.5rem;
+.markdown-body :deep(pre),
+.markdown-body :deep(pre[class*="language-"]) {
+   background-color: var(--app-bg) !important;
+   border: 1px solid var(--app-border-color) !important;
+   padding: 0.6rem 0.85rem !important;
+   border-radius: 0.5rem !important;
    overflow-x: auto;
-   margin-top: 0.6rem;
-   margin-bottom: 0.6rem;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.25rem !important;
 }
 
 .markdown-body :deep(pre code) {
@@ -553,26 +554,31 @@ onUnmounted(() => {
    color: inherit;
 }
 
-.markdown-body :deep(pre[class*="language-"]) {
-   background-color: var(--app-bg) !important;
-   border: 1px solid var(--app-border-color) !important;
-   border-radius: 0.5rem !important;
-   margin-top: 0.6rem !important;
-   margin-bottom: 0.6rem !important;
-   padding: 0.75rem 1rem !important;
-}
-
 .markdown-body :deep(code[class*="language-"]) {
    text-shadow: none !important;
    font-family: 'Fira Code', Consolas, Monaco, monospace;
    font-size: 0.85em;
 }
 
+.markdown-body :deep(blockquote) {
+   border-left: 3px solid var(--app-accent-color);
+   padding-left: 0.75rem;
+   margin-left: 0;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.25rem !important;
+   color: var(--app-secondary-text-color);
+   font-style: italic;
+}
+
+.markdown-body :deep(blockquote p) {
+   margin-bottom: 0.15rem !important;
+}
+
 .markdown-body :deep(img) {
    max-width: 100%;
    height: auto;
    display: block;
-   margin: 0.5rem auto !important;
+   margin: 0.25rem auto !important;
    border-radius: 0.5rem;
    border: 1px solid var(--app-border-color);
 }
@@ -580,10 +586,10 @@ onUnmounted(() => {
 .markdown-body :deep(p:has(img + img)) {
    display: grid;
    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-   gap: 0.5rem;
+   gap: 0.35rem;
    align-items: center;
-   margin-top: 0.5rem !important;
-   margin-bottom: 0.5rem !important;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.25rem !important;
 }
 
 .markdown-body :deep(p:has(img + img) img) {
@@ -599,8 +605,8 @@ onUnmounted(() => {
    grid-template-columns: repeat(4, 1fr);
    grid-template-rows: repeat(2, 110px);
    gap: 6px;
-   margin-top: 0.6rem;
-   margin-bottom: 0.6rem;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.25rem !important;
    border-radius: 0.5rem;
    overflow: hidden;
 }
@@ -648,6 +654,23 @@ onUnmounted(() => {
    }
 }
 
+.markdown-body :deep(table) {
+   width: 100%;
+   border-collapse: collapse;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.25rem !important;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+   border: 1px solid var(--app-border-color);
+   padding: 0.35rem 0.6rem;
+}
+
+.markdown-body :deep(th) {
+   background-color: var(--app-bg);
+}
+
 .markdown-body :deep(.file-download-box) {
    display: flex;
    align-items: center;
@@ -655,8 +678,8 @@ onUnmounted(() => {
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
    border-radius: 0.5rem;
-   padding: 0.75rem 1rem;
-   margin: 0.5rem 0;
+   padding: 0.6rem 0.85rem;
+   margin: 0.25rem 0 !important;
    gap: 0.75rem;
    flex-wrap: nowrap !important;
 }
@@ -739,8 +762,8 @@ onUnmounted(() => {
    border-radius: 0.75rem;
    overflow: hidden;
    border: 1px solid var(--app-border-color);
-   margin-top: 0.6rem;
-   margin-bottom: 0.6rem;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.25rem !important;
 }
 
 .markdown-body :deep(.plyr--video) {
