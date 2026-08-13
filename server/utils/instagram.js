@@ -116,6 +116,7 @@ export default class Instagram {
          const res = await fetch(`https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`, {
             headers: this.HEADERS
          })
+
          const body = await res.json().catch(() => null)
 
          let result = body?.data?.user
@@ -344,6 +345,114 @@ export default class Instagram {
       }
    }
 
+   getReelByUsername = async (username, options = {}) => {
+      const { first = 12, after = null, getAll = false } = options
+
+      try {
+         const user = await this.getProfile(username)
+         if (!user.status) return this.buildMsg(user.msg)
+
+         if (user.data?.is_private) return this.buildMsg('This account is private!')
+
+         const resHtml = await fetch(`https://www.instagram.com/${username}/`, { headers: this.HEADERS })
+         const html = await resHtml.text().catch(() => '')
+
+         const creds = this.getCreds(html)
+
+         if (!creds.lsd || !creds.app_id || !creds.csrf_token || !creds.fb_dtsg) {
+            return this.buildMsg('Failed to extract necessary credentials!')
+         }
+
+         let allEdges = []
+         let currentAfter = after
+         let hasNextPage = true
+
+         do {
+            const payload = currentAfter ? {
+               fb_api_req_friendly_name: 'PolarisProfileReelsTabContentQuery_connection',
+               variables: JSON.stringify({
+                  after: currentAfter,
+                  before: null,
+                  data: {
+                     include_feed_video: true,
+                     page_size: getAll ? 12 : first,
+                     target_user_id: user.data.id
+                  },
+                  first: getAll ? 12 : first,
+                  last: null,
+                  __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false
+               }),
+               doc_id: '27724789533808112'
+            } : {
+               fb_api_req_friendly_name: 'PolarisProfileReelsTabContentQuery',
+               variables: JSON.stringify({
+                  data: {
+                     include_feed_video: true,
+                     page_size: getAll ? 12 : first,
+                     target_user_id: user.data.id
+                  },
+                  __relay_internal__pv__PolarisShortDramaEnabledrelayprovider: false
+               }),
+               doc_id: '38132256686365646'
+            }
+
+            const params = new URLSearchParams({
+               fb_api_caller_class: 'RelayModern',
+               fb_dtsg: creds.fb_dtsg,
+               lsd: creds.lsd,
+               ...payload,
+               server_timestamps: true
+            })
+
+            const resQuery = await fetch(`https://www.instagram.com/graphql/query`, {
+               method: 'POST',
+               headers: {
+                  ...this.HEADERS,
+                  'X-Fb-Lsd': creds.lsd,
+                  ...(currentAfter ? {
+                     'X-Fb-Friendly-Name': 'PolarisProfileReelsTabContentQuery_connection'
+                  } : {
+                     'X-Fb-Friendly-Name': 'PolarisProfileReelsTabContentQuery',
+                  }),
+                  'X-Root-Field-Name': 'xdt_api__v1__feed__user_timeline_graphql_connection',
+               },
+               body: params
+            })
+            
+            const body = await resQuery.json().catch(() => null)
+
+            const result = body?.data?.xdt_api__v1__clips__user__connection_v2
+            if (!result) {
+               if (allEdges.length > 0) break
+               return this.buildMsg('No posts found!')
+            }
+
+            if (!getAll) return result
+
+            const edges = result.edges || []
+            allEdges.push(...edges)
+
+            const pageInfo = result.page_info
+            hasNextPage = pageInfo?.has_next_page
+            currentAfter = pageInfo?.end_cursor
+
+            if (getAll && hasNextPage) {
+               await new Promise(resolve => setTimeout(resolve, 1500))
+            }
+
+         } while (getAll && hasNextPage && currentAfter)
+
+         return {
+            count: allEdges.length,
+            edges: allEdges
+         }
+
+      } catch (e) {
+         console.error(e)
+         return null
+      }
+   }
+
    fetch = async url => {
       try {
          const postId = this.getId(url)
@@ -387,6 +496,30 @@ export default class Instagram {
       } catch (e) {
          console.error(e)
          return this.buildMsg('An error occurred while fetching all posts!')
+      }
+   }
+
+   fetchAllReels = async (username, options = {}) => {
+      try {
+         const result = await this.getReelByUsername(username, options)
+
+         if (!result?.edges?.length) return this.buildMsg('An error occurred while fetching the reels!')
+
+         const allReels = await Promise.all(
+            result.edges.map(edge =>
+               this.fetch(`https://www.instagram.com/p/${edge.node.media.code}`)
+            )
+         )
+
+         return {
+            creator: global.creator,
+            status: true,
+            count: allReels.length,
+            data: allReels.map(v => v.data).flat()
+         }
+      } catch (e) {
+         console.error(e)
+         return this.buildMsg('An error occurred while fetching all reels!')
       }
    }
 }
