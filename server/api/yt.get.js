@@ -1,6 +1,6 @@
 import { getCloudflareEnv } from '../utils/cloudflare.js'
-import { Innertube, Platform } from 'youtubei.js/cf-worker'
-
+import { Innertube } from 'youtubei.js/cf-worker'
+import { Platform } from 'youtubei.js'
 /**
  * Shim evaluator for YouTube player obfuscated code execution.
  * @param {object} data - Object containing JavaScript output string.
