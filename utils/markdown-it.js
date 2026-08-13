@@ -11,8 +11,12 @@ const processInline = (input, allowHtml = true) => {
    const placeholders = []
    const store = (htmlTag) => {
       placeholders.push(htmlTag)
-      return `###PH_${placeholders.length - 1}###`
+      return `XYZPH${placeholders.length - 1}PHXYZ`
    }
+
+   text = text.replace(/`([^`]+)`/g, (match, code) => {
+      return store(`<code>${escapeHtml(code)}</code>`)
+   })
 
    text = text.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)/g, (match, alt, src) => {
       return store(`<img alt="${alt}" src="${src}">`)
@@ -36,12 +40,11 @@ const processInline = (input, allowHtml = true) => {
 
    text = text
       .replace(/~~([^~]+)~~/g, '<del>$1</del>')
-      .replace(/`([^`]+)`/g, (match, code) => store(`<code>${escapeHtml(code)}</code>`))
       .replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>')
       .replace(/(\*|_)(.*?)\1/g, '<em>$2</em>')
 
    placeholders.forEach((tag, idx) => {
-      text = text.replace(new RegExp(`###PH_${idx}###`, 'g'), tag)
+      text = text.replace(new RegExp(`XYZPH${idx}PHXYZ`, 'g'), tag)
    })
 
    return text
@@ -60,6 +63,7 @@ export default class MarkdownIt {
       let ulOpen = false
       let olOpen = false
       let quoteOpen = false
+      let tableOpen = false
       let codeOpen = false
 
       const closeLists = () => {
@@ -80,12 +84,21 @@ export default class MarkdownIt {
          }
       }
 
+      const closeTable = () => {
+         if (tableOpen) {
+            html += '</tbody></table>'
+            tableOpen = false
+         }
+      }
+
       const closeAll = () => {
          closeLists()
          closeQuote()
+         closeTable()
       }
 
-      for (const line of lines) {
+      for (let i = 0; i < lines.length; i++) {
+         const line = lines[i]
          const trimmed = line.trim()
 
          if (line.startsWith('```')) {
@@ -110,6 +123,9 @@ export default class MarkdownIt {
          if (/^\s*---+\s*$/.test(line) || /^\s*\*\*\*+\s*$/.test(line)) {
             closeAll()
             html += '<hr>'
+            if (lines[i + 1] && !lines[i + 1].trim()) {
+               i++
+            }
             continue
          }
 
@@ -117,6 +133,33 @@ export default class MarkdownIt {
             closeAll()
             html += `${trimmed}\n`
             continue
+         }
+
+         if (/^\s*\|.*\|\s*$/.test(line)) {
+            const nextLine = lines[i + 1] ? lines[i + 1].trim() : ''
+            if (!tableOpen && /^\s*\|?\s*:?-+:?\s*\|/.test(nextLine)) {
+               closeLists()
+               closeQuote()
+               const headers = trimmed.split('|').slice(1, -1).map(h => h.trim())
+               html += '<table><thead><tr>'
+               headers.forEach(h => {
+                  html += `<th>${processInline(h, this.options.html)}</th>`
+               })
+               html += '</tr></thead><tbody>'
+               tableOpen = true
+               i++
+               continue
+            } else if (tableOpen) {
+               const cols = trimmed.split('|').slice(1, -1).map(c => c.trim())
+               html += '<tr>'
+               cols.forEach(c => {
+                  html += `<td>${processInline(c, this.options.html)}</td>`
+               })
+               html += '</tr>'
+               continue
+            }
+         } else {
+            closeTable()
          }
 
          if (/^>\s*(.*)$/.test(line)) {
@@ -135,7 +178,7 @@ export default class MarkdownIt {
          }
 
          if (!trimmed) {
-            closeLists()
+            closeAll()
             if (this.options.breaks) html += '<br>'
             continue
          }

@@ -75,7 +75,7 @@
                            Separated)</label>
                         <input v-model="form.tags" class="form-control" placeholder="e.g. tech, nuxt, tutorial"
                            :disabled="loading || isUploadingPhoto">
-                        <div v-if="parsedTags.length" class="d-flex gap-1 flex-wrap mt-2">
+                        <div v-if="parsedTags.length" class="d-flex gap-2 flex-wrap mt-2">
                            <span v-for="tag in parsedTags" :key="tag" class="tag-preview-item">#{{ tag }}</span>
                         </div>
                      </div>
@@ -680,9 +680,9 @@ onUnmounted(() => {
 }
 
 .tag-preview-item {
-   font-size: 0.7rem;
-   padding: 0.2rem 0.5rem;
-   border-radius: 0.25rem;
+   font-size: 0.725rem;
+   padding: 0.25rem 0.6rem;
+   border-radius: 0.35rem;
    background-color: var(--app-bg);
    color: var(--app-text-color);
    border: 1px solid var(--app-border-color);
@@ -781,9 +781,15 @@ onUnmounted(() => {
 .markdown-body :deep(hr) {
    height: 1px;
    padding: 0;
-   margin: 0.75rem 0 !important;
+   margin-top: 0.35rem !important;
+   margin-bottom: 0.7rem !important;
    background-color: var(--app-border-color);
    border: none;
+   clear: both;
+}
+
+.markdown-body :deep(hr + br) {
+   display: none !important;
 }
 
 .markdown-body :deep(ul),
@@ -809,6 +815,7 @@ onUnmounted(() => {
    padding: 0.15rem 0.35rem;
    border-radius: 0.25rem;
    font-size: 0.85em;
+   font-family: 'Fira Code', Consolas, Monaco, monospace;
    border: 1px solid var(--app-border-color);
 }
 
@@ -818,8 +825,8 @@ onUnmounted(() => {
    padding: 0.75rem 1rem;
    border-radius: 0.5rem;
    overflow-x: auto;
-   margin-top: 0.6rem;
-   margin-bottom: 0.6rem;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
 }
 
 .markdown-body :deep(pre code) {
@@ -833,8 +840,8 @@ onUnmounted(() => {
    background-color: var(--app-bg) !important;
    border: 1px solid var(--app-border-color) !important;
    border-radius: 0.5rem !important;
-   margin-top: 0.6rem !important;
-   margin-bottom: 0.6rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
    padding: 0.75rem 1rem !important;
 }
 
@@ -844,11 +851,25 @@ onUnmounted(() => {
    font-size: 0.85em;
 }
 
+.markdown-body :deep(blockquote) {
+   border-left: 3px solid var(--app-accent-color);
+   padding-left: 0.85rem;
+   margin-left: 0;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
+   color: var(--app-secondary-text-color);
+   font-style: italic;
+}
+
+.markdown-body :deep(blockquote p) {
+   margin-bottom: 0.25rem !important;
+}
+
 .markdown-body :deep(img) {
    max-width: 100%;
    height: auto;
    display: block;
-   margin: 0.5rem auto !important;
+   margin: 0.35rem auto !important;
    border-radius: 0.5rem;
    border: 1px solid var(--app-border-color);
 }
@@ -858,8 +879,8 @@ onUnmounted(() => {
    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
    gap: 0.5rem;
    align-items: center;
-   margin-top: 0.5rem !important;
-   margin-bottom: 0.5rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
 }
 
 .markdown-body :deep(p:has(img + img) img) {
@@ -875,8 +896,8 @@ onUnmounted(() => {
    grid-template-columns: repeat(4, 1fr);
    grid-template-rows: repeat(2, 110px);
    gap: 6px;
-   margin-top: 0.6rem;
-   margin-bottom: 0.6rem;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
    border-radius: 0.5rem;
    overflow: hidden;
 }
@@ -924,6 +945,23 @@ onUnmounted(() => {
    }
 }
 
+.markdown-body :deep(table) {
+   width: 100%;
+   border-collapse: collapse;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+   border: 1px solid var(--app-border-color);
+   padding: 0.4rem 0.65rem;
+}
+
+.markdown-body :deep(th) {
+   background-color: var(--app-bg);
+}
+
 .markdown-body :deep(.file-download-box) {
    display: flex;
    align-items: center;
@@ -932,7 +970,7 @@ onUnmounted(() => {
    border: 1px solid var(--app-border-color);
    border-radius: 0.5rem;
    padding: 0.75rem 1rem;
-   margin: 0.5rem 0;
+   margin: 0.4rem 0 !important;
    gap: 0.75rem;
    flex-wrap: nowrap !important;
 }
@@ -1015,8 +1053,8 @@ onUnmounted(() => {
    border-radius: 0.75rem;
    overflow: hidden;
    border: 1px solid var(--app-border-color);
-   margin-top: 0.6rem;
-   margin-bottom: 0.6rem;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
 }
 
 .markdown-body :deep(.plyr--video) {

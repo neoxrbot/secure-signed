@@ -482,7 +482,7 @@ onUnmounted(() => {
 
 .markdown-body :deep(p) {
    margin-top: 0 !important;
-   margin-bottom: 0.2rem !important;
+   margin-bottom: 0.35rem !important;
 }
 
 .markdown-body :deep(p:last-child) {
@@ -497,28 +497,34 @@ onUnmounted(() => {
 .markdown-body :deep(h6) {
    color: var(--app-text-color);
    font-weight: 700;
-   margin-top: 0.5rem !important;
-   margin-bottom: 0.2rem !important;
+   margin-top: 0.75rem !important;
+   margin-bottom: 0.25rem !important;
    line-height: 1.3;
 }
 
 .markdown-body :deep(hr) {
    height: 1px;
    padding: 0;
-   margin: 0.4rem 0 !important;
+   margin-top: 0.35rem !important;
+   margin-bottom: 0.7rem !important;
    background-color: var(--app-border-color);
    border: none;
+   clear: both;
+}
+
+.markdown-body :deep(hr + br) {
+   display: none !important;
 }
 
 .markdown-body :deep(ul),
 .markdown-body :deep(ol) {
    padding-left: 1.25rem;
-   margin-top: 0.2rem !important;
-   margin-bottom: 0.2rem !important;
+   margin-top: 0.25rem !important;
+   margin-bottom: 0.35rem !important;
 }
 
 .markdown-body :deep(li) {
-   margin-bottom: 0.1rem;
+   margin-bottom: 0.15rem;
 }
 
 .markdown-body :deep(a) {
@@ -530,21 +536,21 @@ onUnmounted(() => {
 .markdown-body :deep(code) {
    background-color: var(--app-bg);
    color: var(--app-accent-color);
-   padding: 0.12rem 0.3rem;
+   padding: 0.15rem 0.35rem;
    border-radius: 0.25rem;
    font-size: 0.85em;
+   font-family: 'Fira Code', Consolas, Monaco, monospace;
    border: 1px solid var(--app-border-color);
 }
 
-.markdown-body :deep(pre),
-.markdown-body :deep(pre[class*="language-"]) {
-   background-color: var(--app-bg) !important;
-   border: 1px solid var(--app-border-color) !important;
-   padding: 0.6rem 0.85rem !important;
-   border-radius: 0.5rem !important;
+.markdown-body :deep(pre) {
+   background-color: var(--app-bg);
+   border: 1px solid var(--app-border-color);
+   padding: 0.75rem 1rem;
+   border-radius: 0.5rem;
    overflow-x: auto;
-   margin-top: 0.25rem !important;
-   margin-bottom: 0.25rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
 }
 
 .markdown-body :deep(pre code) {
@@ -552,6 +558,15 @@ onUnmounted(() => {
    padding: 0;
    border: none;
    color: inherit;
+}
+
+.markdown-body :deep(pre[class*="language-"]) {
+   background-color: var(--app-bg) !important;
+   border: 1px solid var(--app-border-color) !important;
+   border-radius: 0.5rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
+   padding: 0.75rem 1rem !important;
 }
 
 .markdown-body :deep(code[class*="language-"]) {
@@ -562,23 +577,23 @@ onUnmounted(() => {
 
 .markdown-body :deep(blockquote) {
    border-left: 3px solid var(--app-accent-color);
-   padding-left: 0.75rem;
+   padding-left: 0.85rem;
    margin-left: 0;
-   margin-top: 0.25rem !important;
-   margin-bottom: 0.25rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
    color: var(--app-secondary-text-color);
    font-style: italic;
 }
 
 .markdown-body :deep(blockquote p) {
-   margin-bottom: 0.15rem !important;
+   margin-bottom: 0.25rem !important;
 }
 
 .markdown-body :deep(img) {
    max-width: 100%;
    height: auto;
    display: block;
-   margin: 0.25rem auto !important;
+   margin: 0.35rem auto !important;
    border-radius: 0.5rem;
    border: 1px solid var(--app-border-color);
 }
@@ -586,10 +601,10 @@ onUnmounted(() => {
 .markdown-body :deep(p:has(img + img)) {
    display: grid;
    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-   gap: 0.35rem;
+   gap: 0.5rem;
    align-items: center;
-   margin-top: 0.25rem !important;
-   margin-bottom: 0.25rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
 }
 
 .markdown-body :deep(p:has(img + img) img) {
@@ -605,8 +620,8 @@ onUnmounted(() => {
    grid-template-columns: repeat(4, 1fr);
    grid-template-rows: repeat(2, 110px);
    gap: 6px;
-   margin-top: 0.25rem !important;
-   margin-bottom: 0.25rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
    border-radius: 0.5rem;
    overflow: hidden;
 }
@@ -657,14 +672,14 @@ onUnmounted(() => {
 .markdown-body :deep(table) {
    width: 100%;
    border-collapse: collapse;
-   margin-top: 0.25rem !important;
-   margin-bottom: 0.25rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
 }
 
 .markdown-body :deep(th),
 .markdown-body :deep(td) {
    border: 1px solid var(--app-border-color);
-   padding: 0.35rem 0.6rem;
+   padding: 0.4rem 0.65rem;
 }
 
 .markdown-body :deep(th) {
@@ -678,8 +693,8 @@ onUnmounted(() => {
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
    border-radius: 0.5rem;
-   padding: 0.6rem 0.85rem;
-   margin: 0.25rem 0 !important;
+   padding: 0.75rem 1rem;
+   margin: 0.4rem 0 !important;
    gap: 0.75rem;
    flex-wrap: nowrap !important;
 }
@@ -762,8 +777,8 @@ onUnmounted(() => {
    border-radius: 0.75rem;
    overflow: hidden;
    border: 1px solid var(--app-border-color);
-   margin-top: 0.25rem !important;
-   margin-bottom: 0.25rem !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
 }
 
 .markdown-body :deep(.plyr--video) {
