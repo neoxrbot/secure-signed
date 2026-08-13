@@ -1,12 +1,5 @@
 import { getCloudflareEnv } from '../utils/cloudflare.js'
-import { Innertube } from 'youtubei.js/cf-worker'
-import { Platform } from 'youtubei.js'
-/**
- * Shim evaluator for YouTube player obfuscated code execution.
- * @param {object} data - Object containing JavaScript output string.
- * @returns {Promise<any>} Execution result.
- */
-Platform.shim.eval = async (data) => new Function(data.output)()
+import YouTube from '../utils/youtube.js'
 
 export default defineEventHandler(async (event) => {
    try {
@@ -18,11 +11,12 @@ export default defineEventHandler(async (event) => {
          return { status: false, msg: 'URL parameter is required' }
       }
 
-      const yt = await Innertube.create();
+      const yt = new YouTube(env.GOOGLE_API)
 
-      const video = await yt.getBasicInfo('IAT2PlWR1Cg');
+      const id = yt.getId(url)
+      const result = await yt.getInfo(id)
 
-      return video
+      return result
    } catch (err) {
       return { status: false, msg: err.message }
    }

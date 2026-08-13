@@ -12,6 +12,7 @@ ALLOWED_CDN_DOMAINS = "neoxr.eu, *.neoxr.eu"
 ADMIN_PIN = "221100"
 CRON_SECRET = "neoxr"
 INSTAGRAM_COOKIE = 'datr=zd5Iamb80_ySk3g3WnGAxxGI;ig_nrcb=1;ds_user_id=61419416002;csrftoken=j2ml7urpDn1yBBCcnBIm1I;ig_did=E3764B33-7EEE-454A-AA17-5753138C7004;wd=1920x959;mid=akje0gAEAAEqztMEyI_OabhYKN8a;sessionid=61419416002%3A2ClCt0lzBVL52G%3A17%3AAYjadx9Rh05nKBfpHKl3gd3K-QvuRBx2dHH7gd1MHg;rur="CCO614194160021814698004:01ff5f4888c26dada409eca4ff0dcb3b6110cd777a7dad0e8f134dd1d159c1506f0ac1c6"'
+GOOGLE_API = 'AIzaSyBr4bacxmdSyYnr89r-rD4uMHhkroxom_0'
 
 [[d1_databases]]
 binding = "DB"
