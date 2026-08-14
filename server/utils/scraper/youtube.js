@@ -64,7 +64,8 @@ export default class YouTube {
          }
 
          const data = await res.json().catch(() => null)
-
+         
+         return data
 
          if (!data || !data.videoDetails) {
             throw new Error('No videoDetails in response');
