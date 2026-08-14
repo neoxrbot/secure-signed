@@ -1,5 +1,5 @@
 import { getCloudflareEnv } from '../../utils/cloudflare.js'
-import Instagram from '../../utils/instagram.js'
+import Instagram from '../../utils/scraper/instagram.js'
 
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)

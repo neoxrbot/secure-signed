@@ -1,4 +1,4 @@
-import appConfig from './app-config.js'
+import appConfig from '../app-config.js'
 
 export default class Instagram {
    constructor(cookie) {
