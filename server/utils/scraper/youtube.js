@@ -10,20 +10,20 @@ export default class YouTube {
 
       this.headers = {
          'Content-Type': 'application/json',
-         'User-Agent':
-            'Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36',
-         'Accept-Language': 'en-US,en;q=0.9',
+         'User-Agent': 'com.google.android.youtube/20.10.41(Linux; U; Android 16; en_US; sdk_gphone16k_x86_64 Build/BE4B.251210.005) gzip',
+         'Accept-Language': 'en-US',
          'X-Goog-Api-Format-Version': '2',
          ...(this.cookie ? { Cookie: this.cookie } : {})
       }
 
       this.client = {
          client: {
-            clientName: 'MWEB',
-            clientVersion: '2.20260205.04.01',
-            platform: 'MOBILE',
+            clientName: 'ANDROID',
+            clientVersion: '20.10.41',
+            androidSdkVersion: 36,
             osName: 'Android',
             osVersion: '16',
+            platform: 'MOBILE',
             hl: 'en',
             gl: 'US',
             utcOffsetMinutes: 0
