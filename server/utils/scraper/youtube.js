@@ -25,6 +25,14 @@ export default class YouTube {
    async getInfo(url) {
       try {
          const videoId = this.getId(url)
+
+         const innertube = await Innertube.create({
+            cache: new UniversalCache(true),
+            retrieve_player: true,
+            // cookie: fs.readFileSync('./cookies/cookie1.txt', 'utf-8'),
+            client_type: 'MWEB'
+         });
+
          const yt = await innertube.getBasicInfo(videoId, { client: 'MWEB' })
          return yt
       } catch (error) {
