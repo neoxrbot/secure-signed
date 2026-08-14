@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
          return { status: false, msg: 'URL parameter is required' }
       }
 
-      const yt = new YouTube(env.GOOGLE_API)
+      const yt = new YouTube(env.GOOGLE_API, env.GOOGLE_COOKIE)
 
       const result = await yt.getInfo(url)
 
