@@ -5,7 +5,7 @@ export default class YouTube {
       this.apikey = apikey
       this.cookie = cookie
 
-      this.player = `https://youtubei.googleapis.com/youtubei/v1/player?key=${this.apiey}`
+      this.player = `https://youtubei.googleapis.com/youtubei/v1/player?key=${this.apikey}`
 
       this.headers = {
          'Content-Type': 'application/json',
