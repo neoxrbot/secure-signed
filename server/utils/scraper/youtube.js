@@ -1,6 +1,19 @@
 import appConfig from '../app-config.js'
 import { Innertube, UniversalCache, Platform } from 'youtubei.js/cf-worker'
 
+Platform.shim.eval = async (data, env) => {
+   const result = {};
+
+   if (env?.n) {
+      result.n = env.n;
+   }
+
+   if (env?.sig) {
+      result.sig = env.sig;
+   }
+
+   return result;
+};
 
 export default class YouTube {
    constructor(cookie) {
