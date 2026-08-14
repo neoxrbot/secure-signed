@@ -1,5 +1,5 @@
 import { getCloudflareEnv } from '../utils/cloudflare.js'
-import YouTube from '../utils/youtube.js'
+import YouTube from '../utils/scraper/youtube.js'
 
 export default defineEventHandler(async (event) => {
    try {
