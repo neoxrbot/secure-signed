@@ -1,12 +1,12 @@
 import appConfig from '../app-config.js'
 import { Innertube, Platform } from 'youtubei.js/cf-worker'
 
-/**
- * Shim evaluator for YouTube player obfuscated code execution.
- * @param {object} data - Object containing JavaScript output string.
- * @returns {Promise<any>} Execution result.
- */
-Platform.shim.eval = async (data) => new Function(data.output)()
+// /**
+//  * Shim evaluator for YouTube player obfuscated code execution.
+//  * @param {object} data - Object containing JavaScript output string.
+//  * @returns {Promise<any>} Execution result.
+//  */
+// Platform.shim.eval = async (data) => new Function(data.output)()
 
 export default class YouTube {
    constructor(cookie) {
