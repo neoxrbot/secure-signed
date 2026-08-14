@@ -1,5 +1,5 @@
 import appConfig from '../app-config.js'
-import { Innertube, Platform } from 'youtubei.js/cf-worker'
+import { Innertube, UniversalCache, Platform } from 'youtubei.js/cf-worker'
 
 
 export default class YouTube {
