@@ -5,14 +5,16 @@ export default class YouTube {
       this.apikey = apikey
       this.cookie = cookie
 
-      this.player = `https://youtubei.googleapis.com/youtubei/v1/player?key=${this.apikey}`
+      this.player =
+         `https://youtubei.googleapis.com/youtubei/v1/player?key=${this.apikey}`
 
       this.headers = {
          'Content-Type': 'application/json',
-         'User-Agent': 'Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36',
+         'User-Agent':
+            'Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36',
          'Accept-Language': 'en-US,en;q=0.9',
          'X-Goog-Api-Format-Version': '2',
-         'Cookie': this.cookie || ''
+         ...(this.cookie ? { Cookie: this.cookie } : {})
       }
 
       this.client = {
@@ -36,50 +38,62 @@ export default class YouTube {
    })
 
    getId = url => {
-      const regEx = /^.*(youtu.be\/|v\/|e\/|u\/\w+\/|embed\/|shorts\/|v=)([^#\&\?]*).*/
+      const regEx =
+         /^.*(youtu.be\/|v\/|e\/|u\/\w+\/|embed\/|shorts\/|v=)([^#&?]*).*/
+
       const match = url.match(regEx)
+
       return match ? match[2] : url
    }
 
    async getInfo(url) {
       try {
+         const videoId = this.getId(url)
+
          const res = await fetch(this.player, {
             method: 'POST',
             headers: this.headers,
             body: JSON.stringify({
                context: this.client,
-               videoId: this.getId(url),
+               videoId,
                playbackContext: {
-                  contentPlaybackContext: { html5Preference: 'HTML5_PREF_WANTS' }
+                  contentPlaybackContext: {
+                     html5Preference: 'HTML5_PREF_WANTS'
+                  }
                }
             })
          })
 
+         const text = await res.text()
+
          if (!res.ok) {
-            const errorText = await res.text()
-            throw new Error(`HTTP ${res.status}: ${errorText.substring(0, 200)}`);
+            throw new Error(
+               `HTTP ${res.status}: ${text.substring(0, 300)}`
+            )
          }
 
-         const data = await res.json().catch(() => null)
-         
-         return data
+         const data = JSON.parse(text)
 
-         if (!data || !data.videoDetails) {
-            throw new Error('No videoDetails in response');
+         if (!data?.videoDetails) {
+            throw new Error(
+               data?.playabilityStatus?.reason ||
+               'No videoDetails in response'
+            )
          }
 
          return {
             videoId,
             title: data.videoDetails.title,
-            thumbnail: data.videoDetails.thumbnail.thumbnails.reduce((a, b) => (a.width > b.width ? a : b)).url,
+            thumbnail:
+               data.videoDetails.thumbnail?.thumbnails?.at(-1)?.url || null,
             author: data.videoDetails.author,
-            duration: parseInt(data.videoDetails.lengthSeconds) || 0,
-            // duration_string: YouFetch.toMim(parseInt(data.videoDetails.lengthSeconds) || 0),
+            duration: Number(data.videoDetails.lengthSeconds) || 0,
             channel: data.videoDetails.author,
             views: data.videoDetails.viewCount,
-            description: data.videoDetails?.shortDescription || '',
-            streamingData: data.streamingData || {},
-         };
+            description: data.videoDetails.shortDescription || '',
+            streamingData: data.streamingData || {}
+         }
+
       } catch (error) {
          return this.buildMsg(error.message)
       }
