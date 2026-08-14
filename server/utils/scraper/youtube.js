@@ -59,7 +59,7 @@ export default class YouTube {
             },
             body: JSON.stringify({
                context: this.client,
-               videoId,
+               videoId: this.getId(url),
                playbackContext: {
                   contentPlaybackContext: { html5Preference: 'HTML5_PREF_WANTS' }
                }
