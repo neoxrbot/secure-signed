@@ -43,14 +43,6 @@ export default class YouTube {
 
    async getInfo(url) {
       try {
-         // const params = new URLSearchParams({
-         //    part: 'snippet,contentDetails,statistics,status',
-         //    id: this.getId(url),
-         //    key: this.apikey
-         // });
-
-         // const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`)
-
          const res = await fetch(this.player, {
             method: 'POST',
             headers: {
@@ -73,9 +65,23 @@ export default class YouTube {
 
          const data = await res.json().catch(() => null)
 
-         return {
-            data
+
+         if (!data || !data.videoDetails) {
+            throw new Error('No videoDetails in response');
          }
+
+         return {
+            videoId,
+            title: data.videoDetails.title,
+            thumbnail: data.videoDetails.thumbnail.thumbnails.reduce((a, b) => (a.width > b.width ? a : b)).url,
+            author: data.videoDetails.author,
+            duration: parseInt(data.videoDetails.lengthSeconds) || 0,
+            // duration_string: YouFetch.toMim(parseInt(data.videoDetails.lengthSeconds) || 0),
+            channel: data.videoDetails.author,
+            views: data.videoDetails.viewCount,
+            description: data.videoDetails?.shortDescription || '',
+            streamingData: data.streamingData || {},
+         };
       } catch (error) {
          return this.buildMsg(error.message)
       }
