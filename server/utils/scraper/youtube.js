@@ -1,26 +1,8 @@
 import appConfig from '../app-config.js'
-import { Innertube, UniversalCache, Platform } from 'youtubei.js/cf-worker'
-
-Platform.shim.eval = async (data, env) => {
-   const result = {};
-
-   if (env?.n) {
-      result.n = env.n;
-   }
-
-   if (env?.sig) {
-      result.sig = env.sig;
-   }
-
-   return result;
-};
 
 export default class YouTube {
-   constructor(cookie) {
-      this.cookie = cookie
-
-      this.clients = new Map()
-      this.poTokenPromise = Promise.resolve()
+   constructor(apikey) {
+      this.apikey = apikey
    }
 
    buildMsg = (message, status = false) => ({
@@ -37,17 +19,24 @@ export default class YouTube {
 
    async getInfo(url) {
       try {
-         const videoId = this.getId(url)
-
-         const innertube = await Innertube.create({
-            cache: new UniversalCache(true),
-            retrieve_player: true,
-            // cookie: fs.readFileSync('./cookies/cookie1.txt', 'utf-8'),
-            client_type: 'MWEB'
+         const params = new URLSearchParams({
+            part: 'snippet,contentDetails,statistics,status',
+            id: this.getId(url),
+            key: this.apikey
          });
 
-         const yt = await innertube.getBasicInfo(videoId, { client: 'MWEB' })
-         return yt
+         const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`)
+
+         if (!res.ok) {
+            const errorText = await res.text()
+            throw new Error(`HTTP ${res.status}: ${errorText.substring(0, 200)}`);
+         }
+
+         const data = await res.json().catch(() => null)
+         
+         return {
+            data
+         };
       } catch (error) {
          return this.buildMsg(error.message)
       }
