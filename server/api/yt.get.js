@@ -13,7 +13,6 @@ export default defineEventHandler(async (event) => {
 
       const yt = new YouTube(env.GOOGLE_API)
 
-      const id = yt.getId(url)
       const result = await yt.getInfo(id)
 
       return result
