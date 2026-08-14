@@ -5,8 +5,8 @@ export default class YouTube {
       this.apikey = apikey
       this.cookie = cookie
 
-      this.player =
-         `https://youtubei.googleapis.com/youtubei/v1/player?key=${this.apikey}`
+      // this.player = `https://youtubei.googleapis.com/youtubei/v1/player?key=${this.apikey}`
+      this.player = 'https://www.youtube.com/youtubei/v1/player?prettyPrint=false'
 
       this.headers = {
          'Content-Type': 'application/json',
@@ -81,6 +81,9 @@ export default class YouTube {
             )
          }
 
+         const formats = data.streamingData.formats || []
+         const combined = formats.find(f => f.itag === 18)
+
          return {
             videoId,
             title: data.videoDetails.title,
@@ -91,7 +94,8 @@ export default class YouTube {
             channel: data.videoDetails.author,
             views: data.videoDetails.viewCount,
             description: data.videoDetails.shortDescription || '',
-            streamingData: data.streamingData || {}
+            streamingData: data.streamingData || {},
+            combined
          }
 
       } catch (error) {
