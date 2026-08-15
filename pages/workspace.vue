@@ -368,9 +368,12 @@ const setupCodeCopyButtons = async () => {
    const preBlocks = document.querySelectorAll('.markdown-body pre')
 
    preBlocks.forEach((pre) => {
-      if (pre.querySelector('.btn-copy-code')) return
+      if (pre.parentElement.classList.contains('code-block-wrapper')) return
 
-      pre.style.position = 'relative'
+      const wrapper = document.createElement('div')
+      wrapper.className = 'code-block-wrapper'
+      pre.parentNode.insertBefore(wrapper, pre)
+      wrapper.appendChild(pre)
 
       const btn = document.createElement('button')
       btn.className = 'btn-copy-code'
@@ -379,6 +382,7 @@ const setupCodeCopyButtons = async () => {
       btn.innerHTML = '<i class="bi bi-clipboard"></i> <span>Copy</span>'
 
       btn.addEventListener('click', async () => {
+         playClickSound()
          const code = pre.querySelector('code')?.innerText || pre.innerText
          try {
             await navigator.clipboard.writeText(code)
@@ -389,7 +393,7 @@ const setupCodeCopyButtons = async () => {
          } catch { }
       })
 
-      pre.appendChild(btn)
+      wrapper.appendChild(btn)
    })
 }
 
@@ -851,15 +855,19 @@ onUnmounted(() => {
    border: 1px solid var(--app-border-color);
 }
 
-.markdown-body :deep(pre) {
+.markdown-body :deep(.code-block-wrapper) {
    position: relative !important;
+   margin-top: 0.4rem !important;
+   margin-bottom: 0.4rem !important;
+}
+
+.markdown-body :deep(pre) {
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
    padding: 0.75rem 1rem;
    border-radius: 0.5rem;
    overflow-x: auto;
-   margin-top: 0.4rem !important;
-   margin-bottom: 0.4rem !important;
+   margin: 0 !important;
 }
 
 .markdown-body :deep(.btn-copy-code) {
@@ -878,7 +886,7 @@ onUnmounted(() => {
    gap: 0.3rem;
    cursor: pointer;
    transition: all 0.2s ease;
-   z-index: 5;
+   z-index: 10;
 }
 
 .markdown-body :deep(.btn-copy-code:hover) {
