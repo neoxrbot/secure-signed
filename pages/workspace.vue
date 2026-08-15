@@ -66,8 +66,7 @@
                                  {{ firstLetter }}
                               </div>
                            </div>
-                           <span class="fs-xs text-muted">{{ form.thumbnail ? 'Custom thumbnail image set' : 'Fallback
-                              letter avatar will be used' }}</span>
+                           <span class="fs-xs text-muted">{{ form.thumbnail ? 'Custom thumbnail image set' : 'Fallback letter avatar will be used' }}</span>
                         </div>
                      </div>
 
