@@ -66,7 +66,8 @@
                                  {{ firstLetter }}
                               </div>
                            </div>
-                           <span class="fs-xs text-muted">{{ form.thumbnail ? 'Custom thumbnail image set' : 'Fallback letter avatar will be used' }}</span>
+                           <span class="fs-xs text-muted">{{ form.thumbnail ? 'Custom thumbnail image set' : 'Fallback
+                              letter avatar will be used' }}</span>
                         </div>
                      </div>
 
@@ -362,6 +363,37 @@ const initPlyr = async () => {
    }
 }
 
+const setupCodeCopyButtons = async () => {
+   await nextTick()
+   if (typeof window === 'undefined') return
+   const preBlocks = document.querySelectorAll('.markdown-body pre')
+
+   preBlocks.forEach((pre) => {
+      if (pre.querySelector('.btn-copy-code')) return
+
+      pre.style.position = 'relative'
+
+      const btn = document.createElement('button')
+      btn.className = 'btn-copy-code'
+      btn.type = 'button'
+      btn.title = 'Copy Code'
+      btn.innerHTML = '<i class="bi bi-clipboard"></i> <span>Copy</span>'
+
+      btn.addEventListener('click', async () => {
+         const code = pre.querySelector('code')?.innerText || pre.innerText
+         try {
+            await navigator.clipboard.writeText(code)
+            btn.innerHTML = '<i class="bi bi-check-lg text-success"></i> <span class="text-success">Copied!</span>'
+            setTimeout(() => {
+               btn.innerHTML = '<i class="bi bi-clipboard"></i> <span>Copy</span>'
+            }, 2000)
+         } catch { }
+      })
+
+      pre.appendChild(btn)
+   })
+}
+
 watch([isPreview, previewHtml], async () => {
    if (isPreview.value) {
       await nextTick()
@@ -369,6 +401,7 @@ watch([isPreview, previewHtml], async () => {
          Prism.highlightAll()
          initPlyr()
          setupImageLightbox()
+         setupCodeCopyButtons()
       }
    }
 })
@@ -820,6 +853,7 @@ onUnmounted(() => {
 }
 
 .markdown-body :deep(pre) {
+   position: relative !important;
    background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
    padding: 0.75rem 1rem;
@@ -827,6 +861,30 @@ onUnmounted(() => {
    overflow-x: auto;
    margin-top: 0.4rem !important;
    margin-bottom: 0.4rem !important;
+}
+
+.markdown-body :deep(.btn-copy-code) {
+   position: absolute;
+   top: 0.5rem;
+   right: 0.5rem;
+   font-size: 0.7rem;
+   font-weight: 600;
+   padding: 0.2rem 0.5rem;
+   border-radius: 0.25rem;
+   background-color: var(--app-card-bg);
+   color: var(--app-secondary-text-color);
+   border: 1px solid var(--app-border-color);
+   display: inline-flex;
+   align-items: center;
+   gap: 0.3rem;
+   cursor: pointer;
+   transition: all 0.2s ease;
+   z-index: 5;
+}
+
+.markdown-body :deep(.btn-copy-code:hover) {
+   color: var(--app-text-color);
+   border-color: var(--app-border-color);
 }
 
 .markdown-body :deep(pre code) {
