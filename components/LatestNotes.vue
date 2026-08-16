@@ -125,7 +125,7 @@ const noteExcerpt = (content = '') => {
 const fetchLatestNotes = async () => {
    loading.value = true
    try {
-      const targetUrl = `${getBaseUrl()}/api/notes?public=true&limit=10`
+      const targetUrl = `${getBaseUrl()}/api/notes?public=true&limit=4`
       let endpoint = targetUrl
       if (typeof window !== 'undefined' && !targetUrl.includes(window.location.host)) {
          endpoint = `/api/proxy?url=${encodeURIComponent(targetUrl)}`
@@ -138,7 +138,7 @@ const fetchLatestNotes = async () => {
          const tagList = Array.isArray(n.tags)
             ? n.tags
             : String(n.tags).split(',').map(t => t.trim().replace(/^#/, ''))
-         return tagList.some(t => t.toLowerCase() === 'api')
+         return tagList
       }).slice(0, 6)
    } catch {
       notes.value = []
