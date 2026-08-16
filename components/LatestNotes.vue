@@ -125,7 +125,7 @@ const noteExcerpt = (content = '') => {
 const fetchLatestNotes = async () => {
    loading.value = true
    try {
-      const targetUrl = `${getBaseUrl()}/api/notes?public=true&tag=api&limit=10`
+      const targetUrl = `${getBaseUrl()}/api/notes?public=true&limit=10`
       let endpoint = targetUrl
       if (typeof window !== 'undefined' && !targetUrl.includes(window.location.host)) {
          endpoint = `/api/proxy?url=${encodeURIComponent(targetUrl)}`
