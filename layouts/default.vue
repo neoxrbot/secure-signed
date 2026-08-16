@@ -132,7 +132,8 @@ const navLinks = computed<NavItem[]>(() => {
    const links: NavItem[] = [
       { text: 'Home', href: '/', icon: 'bi bi-house' },
       { text: 'Services', href: '/service', icon: 'bi bi-cpu-fill' },
-      { text: 'Documentation', href: '/docs', icon: 'bi bi-book' }
+      { text: 'Documentation', href: '/docs', icon: 'bi bi-book' },
+      // { text: 'Profile', href: '/profile', icon: 'bi bi-user' }
    ]
 
    if (isAdmin.value) {
