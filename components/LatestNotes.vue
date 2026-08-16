@@ -1,11 +1,13 @@
 <template>
    <div class="latest-notes-container" @mouseenter="stopAutoSlide" @mouseleave="startAutoSlide">
       <div class="d-flex align-items-center justify-content-between mb-3">
-         <div class="d-flex align-items-center">
-            <div class="section-icon me-2">
+         <div class="d-flex align-items-center gap-2">
+            <div class="section-icon">
                <i class="bi bi-journal-text"></i>
             </div>
-            <h6 class="section-title mb-0 text-color fw-bold">Latest Articles</h6>
+            <div>
+               <h6 class="fw-bold text-color mb-0">Latest Articles</h6>
+            </div>
          </div>
          <div v-if="notes.length > 1" class="d-flex align-items-center gap-2">
             <button class="btn btn-icon-only" @click="prevSlide" title="Previous">
@@ -21,9 +23,9 @@
          </div>
       </div>
 
-      <div v-if="loading" class="note-box-card p-3 rounded-3">
+      <div v-if="loading" class="skeleton-box p-3 rounded-3">
          <div class="d-flex align-items-center gap-2 mb-2">
-            <div class="skeleton" style="width: 36px; height: 36px; border-radius: 6px;"></div>
+            <div class="skeleton" style="width: 36px; height: 36px; border-radius: 6px; flex-shrink: 0;"></div>
             <div class="flex-grow-1">
                <div class="skeleton w-75 mb-1" style="height: 14px;"></div>
                <div class="skeleton w-25" style="height: 10px;"></div>
@@ -59,28 +61,38 @@
                </a>
             </div>
 
-            <p class="fs-xs text-muted mb-0 note-excerpt-text">{{ noteExcerpt(activeNote.content) }}...</p>
+            <p class="fs-xs text-muted note-excerpt-text">{{ noteExcerpt(activeNote.content) }}...</p>
          </div>
       </Transition>
 
-      <div v-else class="note-box-card p-4 text-center text-muted fs-xs rounded-3">
+      <div v-else
+         class="note-box-card p-4 text-center text-muted fs-xs rounded-3 d-flex align-items-center justify-content-center">
          No public articles available.
       </div>
    </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+
+interface Note {
+   id: string | number
+   title: string
+   content: string
+   thumbnail?: string
+   reads?: number
+   tags?: string[] | string
+}
 
 const props = defineProps({
    domain: { type: String, default: 'secure-signed.pages.dev' }
 })
 
 const primaryDomain = ref(props.domain)
-const notes = ref([])
+const notes = ref<Note[]>([])
 const activeIndex = ref(0)
 const loading = ref(true)
-let slideTimer = null
+let slideTimer: ReturnType<typeof setInterval> | null = null
 
 const activeNote = computed(() => notes.value[activeIndex.value] || null)
 
@@ -89,11 +101,11 @@ const getBaseUrl = () => {
    return domainStr.startsWith('http') ? domainStr : `https://${domainStr}`
 }
 
-const getArticleUrl = (id) => {
+const getArticleUrl = (id: string | number) => {
    return `${getBaseUrl()}/note/${id}`
 }
 
-const getThumbnailUrl = (thumb) => {
+const getThumbnailUrl = (thumb: string) => {
    if (!thumb) return ''
    if (thumb.startsWith('http')) return thumb
    const base = getBaseUrl()
@@ -107,7 +119,7 @@ const getFirstLetter = (title = '') => {
 
 const noteExcerpt = (content = '') => {
    if (!content) return ''
-   return content.replace(/[#*_`>\-!\[\]()]/g, '').slice(0, 95)
+   return content.replace(/[#*_`>\-!\[\]()]/g, '').slice(0, 110)
 }
 
 const fetchLatestNotes = async () => {
@@ -118,10 +130,10 @@ const fetchLatestNotes = async () => {
       if (typeof window !== 'undefined' && !targetUrl.includes(window.location.host)) {
          endpoint = `/api/proxy?url=${encodeURIComponent(targetUrl)}`
       }
-      const res = await $fetch(endpoint)
+      const res = await $fetch<any>(endpoint)
       const rawData = res.data || []
 
-      notes.value = rawData.filter(n => {
+      notes.value = rawData.filter((n: Note) => {
          if (!n.tags) return false
          const tagList = Array.isArray(n.tags)
             ? n.tags
@@ -158,7 +170,7 @@ const prevSlide = () => {
    activeIndex.value = (activeIndex.value - 1 + notes.value.length) % notes.value.length
 }
 
-const goToSlide = (idx) => {
+const goToSlide = (idx: number) => {
    activeIndex.value = idx
    startAutoSlide()
 }
@@ -182,9 +194,10 @@ onUnmounted(() => {
    align-items: center;
    justify-content: center;
    background-color: var(--app-bg);
-   border-radius: 6px;
-   color: var(--app-accent-color);
+   border-radius: 0.375rem;
    border: 1px solid var(--app-border-color);
+   color: var(--app-accent-color);
+   font-size: 0.9rem;
 }
 
 .fs-xs {
@@ -204,9 +217,13 @@ onUnmounted(() => {
 }
 
 .note-box-card {
-   background-color: var(--app-bg);
+   background-color: var(--app-card-bg);
    border: 1px solid var(--app-border-color);
-   border-radius: 0.625rem;
+   height: 130px;
+   min-height: 130px;
+   display: flex;
+   flex-direction: column;
+   justify-content: space-between;
 }
 
 .note-thumb-box {
@@ -215,7 +232,7 @@ onUnmounted(() => {
    border-radius: 6px;
    overflow: hidden;
    border: 1px solid var(--app-border-color);
-   background-color: var(--app-card-bg);
+   background-color: var(--app-bg);
    flex-shrink: 0;
 }
 
@@ -247,23 +264,32 @@ onUnmounted(() => {
 }
 
 .note-excerpt-text {
+   font-size: 0.75rem;
    line-height: 1.45;
+   color: var(--app-secondary-text-color) !important;
+   display: -webkit-box;
+   -webkit-line-clamp: 2;
+   -webkit-box-orient: vertical;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   margin-bottom: 0;
 }
 
 .btn-action-view {
-   background-color: var(--app-card-bg);
+   background-color: var(--app-bg);
    border: 1px solid var(--app-border-color);
-   color: var(--app-text-color);
+   color: var(--app-text-color) !important;
    font-size: 0.75rem;
-   padding: 0.2rem 0.6rem;
+   font-weight: 600;
+   padding: 0.25rem 0.65rem;
    border-radius: 0.375rem;
    transition: all 0.2s ease;
 }
 
 .btn-action-view:hover {
-   border-color: var(--app-border-color);
-   color: var(--app-accent-color);
-   background-color: var(--app-card-bg);
+   background-color: var(--app-accent-color);
+   color: var(--app-accent-text-color) !important;
+   border-color: var(--app-accent-color);
 }
 
 .btn-icon-only {
@@ -283,7 +309,6 @@ onUnmounted(() => {
 .btn-icon-only:hover {
    background-color: var(--app-card-bg);
    color: var(--app-text-color);
-   border-color: var(--app-border-color);
 }
 
 .dot-indicator {
@@ -314,6 +339,16 @@ onUnmounted(() => {
 .slide-fade-leave-to {
    opacity: 0;
    transform: translateX(-10px);
+}
+
+.skeleton-box {
+   background-color: var(--app-card-bg);
+   border: 1px solid var(--app-border-color);
+   height: 130px;
+   min-height: 130px;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
 }
 
 .skeleton {
