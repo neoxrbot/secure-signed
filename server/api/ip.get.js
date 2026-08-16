@@ -140,16 +140,21 @@ export default defineEventHandler(async (event) => {
    const countryName = getCountryName(countryCode)
    const deviceInfo = parseDeviceInfo(userAgent, secChModel)
 
+   const ipv4 = ipVersion === 'IPv4' ? ip : null
+   const ipv6 = ipVersion === 'IPv6' ? ip : null
+
    const [reverseDns, proxyInfo] = await Promise.all([
       getReverseDns(ip),
       Promise.resolve(detectProxy(event, cf))
    ])
 
-   return {
-      creator: appConfig?.watermark?.creator,
+   const responseData = {
+      creator: appConfig?.watermark?.creator || '@neoxr.js - Wildan Izzudin',
       status: true,
       data: {
          ip,
+         ipv4,
+         ipv6,
          ip_version: ipVersion,
          device: deviceInfo,
          hostname_reverse_dns: reverseDns || 'No PTR record',
@@ -172,4 +177,7 @@ export default defineEventHandler(async (event) => {
          user_agent: userAgent
       }
    }
+
+   setHeader(event, 'Content-Type', 'application/json; charset=utf-8')
+   return JSON.stringify(responseData, null, 2)
 })
