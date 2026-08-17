@@ -114,7 +114,7 @@ const login = async () => {
       router.push('/workspace')
    } catch (e) {
       playErrorSound()
-      error.value = e.data?.message || e.message || 'Incorrect PIN code'
+      error.value = e.data?.msg || e.message || 'Incorrect PIN code'
       digits.value = ['', '', '', '', '', '']
       nextTick(() => pinInputs.value[0]?.focus())
    } finally {

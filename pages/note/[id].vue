@@ -353,7 +353,7 @@ onMounted(async () => {
       initPlyr()
       setupImageLightbox()
    } catch (e) {
-      error.value = e.data?.message || 'Note not found or private'
+      error.value = e.data?.msg || 'Note not found or private'
    } finally {
       pending.value = false
    }
