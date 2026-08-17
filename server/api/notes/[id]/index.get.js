@@ -8,9 +8,9 @@ export default defineEventHandler(async (event) => {
    const id = getRouterParam(event, 'id')
    const note = await getNoteById(env.DB, id)
 
-   if (!note) throw createError({ statusCode: 404, statusmsg: 'Note not found' })
+   if (!note) throw createError({ statusCode: 404, status: false, msg: 'Note not found' })
 
-   if (Number(note.is_private) === 1 && !(await isAdmin(event))) throw createError({ statusCode: 401, statusmsg: 'Admin login required' })
+   if (Number(note.is_private) === 1 && !(await isAdmin(event))) throw createError({ statusCode: 401, status: false, msg: 'Admin login required' })
 
    await incrementNoteReads(env.DB, id)
 

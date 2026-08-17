@@ -21,7 +21,7 @@ export async function isAdmin(event) {
 
 export async function requireAdmin(event) {
    if (await isAdmin(event)) return true
-   throw createError({ statusCode: 401, statusmsg: 'Admin login required' })
+   throw createError({ statusCode: 401, status: false, msg: 'Admin login required' })
 }
 
 export async function setAdminCookie(event) {

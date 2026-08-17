@@ -5,8 +5,8 @@ export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
    const body = await readBody(event)
    const pin = String(body?.pin || '')
-   if (!/^\d{6}$/.test(pin)) throw createError({ statusCode: 400, statusmsg: 'PIN must be 6 digits' })
-   if (!env.ADMIN_PIN || pin !== String(env.ADMIN_PIN)) throw createError({ statusCode: 401, statusmsg: 'Invalid admin PIN' })
+   if (!/^\d{6}$/.test(pin)) throw createError({ statusCode: 400, status: false, msg: 'PIN must be 6 digits' })
+   if (!env.ADMIN_PIN || pin !== String(env.ADMIN_PIN)) throw createError({ statusCode: 401, status: false, msg: 'Invalid admin PIN' })
    await setAdminCookie(event)
    return { status: true, data: { admin: true } }
 })
