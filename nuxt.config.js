@@ -6,7 +6,6 @@ function capitalize(str) {
    return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
-// Fungsi untuk scan folder server/api saat BUILD TIME
 function getApiEndpoints() {
    const apiDir = path.resolve('./server/api')
    if (!fs.existsSync(apiDir)) return []
@@ -22,41 +21,37 @@ function getApiEndpoints() {
          if (stat.isDirectory()) {
             scanDir(fullPath)
          } else if (file.endsWith('.js') || file.endsWith('.ts')) {
-            // Abaikan file endpoints.get.js itu sendiri
             if (file.includes('endpoints')) continue
 
             const relativePath = path.relative(apiDir, fullPath).replace(/\\/g, '/')
+            const content = fs.readFileSync(fullPath, 'utf-8')
 
-            // 1. Deteksi HTTP Method
+            // 1. Ekstrak 'name' dari export const meta
+            const nameMatch = content.match(/name\s*:\s*['"`](.*?)['"`]/)
+
+            // JIKA TIDAK ADA 'name' DI META, SKIP FILE INI (JANGAN DI-LIST)
+            if (!nameMatch || !nameMatch[1]) continue
+
+            // 2. Ekstrak category dan description jika ada
+            const categoryMatch = content.match(/category\s*:\s*['"`](.*?)['"`]/)
+            const descMatch = content.match(/description\s*:\s*['"`](.*?)['"`]/)
+
+            // 3. Deteksi HTTP Method & Clean Path
             const methodMatch = file.match(/\.(get|post|put|delete|patch)\.(js|ts)$/)
             const method = methodMatch ? methodMatch[1].toUpperCase() : 'ALL'
 
-            // 2. Clean URL Path (misal: instagram/profile.get.js -> /api/instagram/profile)
             const cleanPath = '/api/' + relativePath
                .replace(/\.(get|post|put|delete|patch)\.(js|ts)$/, '')
                .replace(/\.(js|ts)$/, '')
 
-            // 3. Baca isi file untuk ekstrak 'export const meta' via Regex
-            const content = fs.readFileSync(fullPath, 'utf-8')
-
-            const nameMatch = content.match(/name\s*:\s*['"`](.*?)['"`]/)
-            const categoryMatch = content.match(/category\s*:\s*['"`](.*?)['"`]/)
-            const descMatch = content.match(/description\s*:\s*['"`](.*?)['"`]/)
-
-            // Fallback Kategori & Nama
             const segments = relativePath.split('/')
             const defaultCategory = segments.length > 1 ? capitalize(segments[0]) : 'General'
-
-            const rawName = segments[segments.length - 1]
-               .replace(/\.(get|post|put|delete|patch)\.(js|ts)$/, '')
-               .replace(/[-_]/g, ' ')
-            const defaultName = capitalize(rawName)
 
             endpoints.push({
                path: cleanPath,
                method: method,
+               name: nameMatch[1], // Nama wajib dari meta.name
                category: categoryMatch ? categoryMatch[1] : defaultCategory,
-               name: nameMatch ? nameMatch[1] : defaultName,
                description: descMatch ? descMatch[1] : ''
             })
          }
