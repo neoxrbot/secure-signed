@@ -1,4 +1,4 @@
-import { getCloudflareEnv } from './cloudflare.js'
+import { getCloudflareEnv } from './index.js'
 
 const COOKIE_NAME = 'admin_session'
 
