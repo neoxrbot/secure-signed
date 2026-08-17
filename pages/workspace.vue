@@ -29,7 +29,7 @@
                      <div>
                         <h6 class="editor-title mb-0">{{ form.id ? 'Edit Note' : 'Create New Note' }}</h6>
                         <span class="editor-subtitle">{{ form.id ? 'Updating existing article' : 'Write content'
-                        }}</span>
+                           }}</span>
                      </div>
                   </div>
                   <button v-if="form.id" type="button" class="btn btn-xs btn-outline-secondary" @click="resetForm">
@@ -127,7 +127,7 @@
                               class="upload-overlay d-flex flex-column align-items-center justify-content-center">
                               <div class="spinner-border spinner-border-sm text-accent mb-2" role="status"></div>
                               <span class="fs-xs fw-semibold text-color">{{ uploadProgressText || 'Uploading...'
-                              }}</span>
+                                 }}</span>
                            </div>
                         </div>
                      </div>
@@ -479,6 +479,14 @@ const editNote = (n) => {
       tags: Array.isArray(n.tags) ? n.tags.join(', ') : (n.tags || ''),
       is_private: !!n.is_private
    }
+   nextTick(() => {
+      if (typeof window !== 'undefined') {
+         const editorCard = document.querySelector('.note-editor-card')
+         if (editorCard) {
+            editorCard.scrollIntoView({ behavior: 'smooth', block: 'start' })
+         }
+      }
+   })
 }
 
 const removeNote = async (id) => {

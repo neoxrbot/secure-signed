@@ -74,7 +74,7 @@
                      </div>
 
                      <div class="action-buttons-group d-flex align-items-center gap-1 flex-shrink-0">
-                        <button class="btn-action-pill edit-btn" title="Edit note" @click="emit('edit', note)">
+                        <button class="btn-action-pill edit-btn" title="Edit note" @click="handleEdit(note)">
                            <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn-action-pill delete-btn" title="Delete note" @click="emit('delete', note.id)">
@@ -168,6 +168,16 @@ const getTagsList = (tags) => {
    if (Array.isArray(tags)) return tags
    if (typeof tags === 'string') return tags.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean)
    return []
+}
+
+const handleEdit = (note) => {
+   emit('edit', note)
+   if (typeof window !== 'undefined') {
+      const editorEl = document.querySelector('.note-editor-card')
+      if (editorEl) {
+         editorEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+   }
 }
 
 const formatDate = (v) => {
@@ -418,12 +428,12 @@ const formatDate = (v) => {
 
 .btn-action-pill.edit-btn:hover {
    color: var(--app-accent-color);
-   border-color: var(--app-accent-color);
+   border-color: var(--app-border-color);
 }
 
 .btn-action-pill.delete-btn:hover {
    color: #dc3545;
-   border-color: rgba(220, 53, 69, 0.5);
+   border-color: var(--app-border-color);
    background-color: rgba(220, 53, 69, 0.1);
 }
 
