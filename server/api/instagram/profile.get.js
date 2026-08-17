@@ -5,7 +5,10 @@ import Instagram from '../../utils/scraper/instagram.js'
 
 export const meta = {
    name: 'Instagram Profile',
-   category: 'Instagram'
+   category: 'Instagram',
+   premium: true,               // true = butuh API Key
+   error: false,                // true = endpoint sedang error/maintenance
+   parameter: ['username']
 }
 
 export default defineEventHandler(async (event) => {

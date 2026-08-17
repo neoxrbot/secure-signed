@@ -11,6 +11,7 @@ function getApiEndpoints() {
    if (!fs.existsSync(apiDir)) return []
 
    const endpoints = []
+   const endpointsMap = {}
 
    function scanDir(dir) {
       const files = fs.readdirSync(dir)
@@ -26,17 +27,27 @@ function getApiEndpoints() {
             const relativePath = path.relative(apiDir, fullPath).replace(/\\/g, '/')
             const content = fs.readFileSync(fullPath, 'utf-8')
 
-            // 1. Ekstrak 'name' dari export const meta
+            // 1. Ekstrak meta.name (Wajib)
             const nameMatch = content.match(/name\s*:\s*['"`](.*?)['"`]/)
-
-            // JIKA TIDAK ADA 'name' DI META, SKIP FILE INI (JANGAN DI-LIST)
             if (!nameMatch || !nameMatch[1]) continue
 
-            // 2. Ekstrak category dan description jika ada
+            // 2. Ekstrak meta lainnya
             const categoryMatch = content.match(/category\s*:\s*['"`](.*?)['"`]/)
             const descMatch = content.match(/description\s*:\s*['"`](.*?)['"`]/)
+            const premiumMatch = content.match(/premium\s*:\s*(true|false)/)
+            const errorMatch = content.match(/error\s*:\s*(true|false)/)
+            const paramMatch = content.match(/parameter\s*:\s*\[(.*?)\]/s)
 
-            // 3. Deteksi HTTP Method & Clean Path
+            // Parse parameter array (misal: ['url', 'text'])
+            let parameterList = []
+            if (paramMatch && paramMatch[1]) {
+               parameterList = paramMatch[1]
+                  .split(',')
+                  .map(s => s.replace(/['"`\s]/g, ''))
+                  .filter(Boolean)
+            }
+
+            // 3. Deteksi Method & Clean Path
             const methodMatch = file.match(/\.(get|post|put|delete|patch)\.(js|ts)$/)
             const method = methodMatch ? methodMatch[1].toUpperCase() : 'ALL'
 
@@ -47,20 +58,28 @@ function getApiEndpoints() {
             const segments = relativePath.split('/')
             const defaultCategory = segments.length > 1 ? capitalize(segments[0]) : 'General'
 
-            endpoints.push({
+            const endpointData = {
                path: cleanPath,
                method: method,
-               name: nameMatch[1], // Nama wajib dari meta.name
+               name: nameMatch[1],
                category: categoryMatch ? categoryMatch[1] : defaultCategory,
-               description: descMatch ? descMatch[1] : ''
-            })
+               description: descMatch ? descMatch[1] : '',
+               premium: premiumMatch ? premiumMatch[1] === 'true' : false,
+               error: errorMatch ? errorMatch[1] === 'true' : false,
+               parameter: parameterList
+            }
+
+            endpoints.push(endpointData)
+            endpointsMap[cleanPath] = endpointData // Map berdasarkan path URL
          }
       }
    }
 
    scanDir(apiDir)
-   return endpoints
+   return { endpoints, endpointsMap }
 }
+
+const { endpoints, endpointsMap } = getApiEndpoints()
 
 export default defineNuxtConfig({
    compatibilityDate: '2024-04-03',
@@ -116,7 +135,8 @@ export default defineNuxtConfig({
       }
    },
    runtimeConfig: {
-      endpointsList: getApiEndpoints(),
+      endpointsList: endpoints,
+      endpointsMap: endpointsMap,
       public: {
          title: 'Secure Signed',
          tagline: 'Security & CDN Utilities',
