@@ -1,14 +1,24 @@
-import { getCloudflareEnv } from '../../utils/cloudflare.js'
+import { getCloudflareEnv, jsonResponse } from '../../utils/index.js'
 import { isAdmin } from '../../utils/admin-auth.js'
+import appConfig from '../../utils/app-config.js'
 
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
    const query = getQuery(event)
    const db = env?.DB
 
-   if (!db) {
-      return { status: false, data: [], meta: { page: 1, per_page: 5, total: 0, total_pages: 1 } }
-   }
+   if (!db)
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         data: [],
+         meta: {
+            page: 1,
+            per_page: 5,
+            total: 0,
+            total_pages: 1
+         }
+      })
 
    try {
       const publicOnly = query.public === '1' || query.public === 'true'
@@ -40,7 +50,7 @@ export default defineEventHandler(async (event) => {
       const total = Number(countRes?.total || 0)
       const totalPages = Math.max(Math.ceil(total / perPage), 1)
 
-      return {
+      return jsonResponse(event, {
          status: true,
          data: notes,
          meta: {
@@ -49,8 +59,18 @@ export default defineEventHandler(async (event) => {
             total,
             total_pages: totalPages
          }
-      }
+      })
    } catch (err) {
-      return { status: false, data: [], meta: { page: 1, per_page: 5, total: 0, total_pages: 1 } }
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         data: [],
+         meta: {
+            page: 1,
+            per_page: 5,
+            total: 0,
+            total_pages: 1
+         }
+      })
    }
 })

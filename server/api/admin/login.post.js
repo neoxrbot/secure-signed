@@ -1,4 +1,4 @@
-import { getCloudflareEnv } from '../../utils/cloudflare.js'
+import { getCloudflareEnv } from '../../utils/index.js'
 import { setAdminCookie } from '../../utils/admin-auth.js'
 
 export default defineEventHandler(async (event) => {

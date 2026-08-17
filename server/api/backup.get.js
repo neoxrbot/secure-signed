@@ -1,4 +1,5 @@
-import { getCloudflareEnv } from '../utils/cloudflare.js'
+import { getCloudflareEnv, jsonResponse } from '../utils/index.js'
+import appConfig from '../utils/app-config.js'
 
 function escapeSqlValue(val) {
    if (val === null || val === undefined) return 'NULL'
@@ -16,15 +17,19 @@ export default defineEventHandler(async (event) => {
    const secret = query.secret
    const expectedSecret = env?.CRON_SECRET || env?.ADMIN_SECRET || env?.SECRET
 
-   if (!expectedSecret || secret !== expectedSecret) {
-      setResponseStatus(event, 401)
-      return { status: false, msg: 'Unauthorized: Invalid secret token' }
-   }
+   if (!expectedSecret || secret !== expectedSecret)
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         message: 'Unauthorized: Invalid secret token'
+      }, 401)
 
-   if (!db) {
-      setResponseStatus(event, 500)
-      return { status: false, msg: 'Database D1 binding not found' }
-   }
+   if (!db)
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         message: 'Database D1 binding not found'
+      }, 500)
 
    try {
       const now = new Date()
@@ -80,7 +85,10 @@ export default defineEventHandler(async (event) => {
 
       return sqlDump
    } catch (err) {
-      setResponseStatus(event, 500)
-      return { status: false, msg: `Backup failed: ${err.message}` }
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         message: '`Backup failed: ${err.message}'
+      }, 500)
    }
 })

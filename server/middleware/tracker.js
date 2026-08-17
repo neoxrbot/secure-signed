@@ -1,4 +1,4 @@
-import { getCloudflareEnv } from '../utils/cloudflare.js'
+import { getCloudflareEnv } from '../utils/index.js'
 import { recordHit } from '../utils/database.js'
 
 export default defineEventHandler((event) => {

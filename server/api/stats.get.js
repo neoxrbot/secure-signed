@@ -1,4 +1,4 @@
-import { getCloudflareEnv } from '../utils/cloudflare.js'
+import { getCloudflareEnv } from '../utils/index.js'
 import { getGlobalStats, getWeeklyStats } from '../utils/database.js'
 import appConfig from '../utils/app-config.js'
 

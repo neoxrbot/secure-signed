@@ -1,6 +1,7 @@
-import { getCloudflareEnv } from '../../utils/cloudflare.js'
+import { getCloudflareEnv, jsonResponse } from '../../utils/index.js'
 import { isAdmin } from '../../utils/admin-auth.js'
 import { createNote } from '../../utils/database.js'
+import appConfig from '../../utils/app-config.js'
 
 function generateId(length = 10) {
    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -14,16 +15,20 @@ export default defineEventHandler(async (event) => {
    const db = env?.DB
 
    const admin = await isAdmin(event)
-   if (!admin) {
-      setResponseStatus(event, 401)
-      return { status: false, message: 'Unauthorized' }
-   }
+   if (!admin)
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         message: 'Unauthorized'
+      }, 401)
 
    const body = await readBody(event) || {}
-   if (!body.title || !body.content) {
-      setResponseStatus(event, 400)
-      return { status: false, message: 'Title and content are required' }
-   }
+   if (!body.title || !body.content)
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         message: 'Title and content are required'
+      }, 400)
 
    try {
       const id = body.id || generateId(10)
@@ -36,9 +41,16 @@ export default defineEventHandler(async (event) => {
          isPrivate: body.is_private
       })
 
-      return { status: true, data: note }
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: true,
+         data: note
+      }, 400)
    } catch (err) {
-      setResponseStatus(event, 500)
-      return { status: false, message: err.message }
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         message: err.message
+      }, 500)
    }
 })

@@ -1,4 +1,4 @@
-import { getCloudflareEnv } from '../../utils/cloudflare.js'
+import { getCloudflareEnv } from '../../utils/index.js'
 import { getSignedCdn, recordCdnDownload, cleanExpiredCdn } from '../../utils/database.js'
 
 function isDomainAllowed(domain, allowedPatternsStr) {

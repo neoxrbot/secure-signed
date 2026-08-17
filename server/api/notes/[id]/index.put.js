@@ -1,6 +1,7 @@
-import { getCloudflareEnv } from '../../../utils/cloudflare.js'
+import { getCloudflareEnv, jsonResponse } from '../../../utils/index.js'
 import { isAdmin } from '../../../utils/admin-auth.js'
 import { updateNote } from '../../../utils/database.js'
+import appConfig from '../../../utils/app-config.js'
 
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
@@ -9,10 +10,12 @@ export default defineEventHandler(async (event) => {
    const db = env?.DB
 
    const admin = await isAdmin(event)
-   if (!admin) {
-      setResponseStatus(event, 401)
-      return { status: false, message: 'Unauthorized' }
-   }
+   if (!admin)
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         message: 'Unauthorized'
+      }, 401)
 
    const body = await readBody(event) || {}
 
@@ -25,9 +28,16 @@ export default defineEventHandler(async (event) => {
          isPrivate: body.is_private
       })
 
-      return { status: true, data: note }
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: true,
+         data: note
+      })
    } catch (err) {
-      setResponseStatus(event, 500)
-      return { status: false, message: err.message }
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         message: err.message
+      }, 500)
    }
 })

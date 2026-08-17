@@ -1,4 +1,6 @@
-import { getCloudflareEnv } from '../../utils/cloudflare.js'
+import { getCloudflareEnv, jsonResponse } from '../../utils/index.js'
+import appConfig from '../../utils/app-config.js'
+
 import Instagram from '../../utils/scraper/instagram.js'
 
 export default defineEventHandler(async (event) => {
@@ -6,17 +8,26 @@ export default defineEventHandler(async (event) => {
       const query = getQuery(event)
       const username = query.username
 
-      if (!username) {
-         return { status: false, msg: 'Username parameter is required' }
-      }
+      if (!username)
+         return jsonResponse(event, {
+            creator: appConfig.watermark.creator,
+            status: false,
+            msg: 'Username parameter is required'
+         })
 
       const env = getCloudflareEnv(event) || {}
       const customCookie = getHeader(event, 'x-instagram-cookie')
       const cookie = customCookie || env.INSTAGRAM_COOKIE || ''
 
       const ig = new Instagram(cookie)
-      return await ig.getProfile(username)
+      const json = await ig.getProfile(username)
+
+      return jsonResponse(event, json, json.status ? 200 : 403)
    } catch (err) {
-      return { status: false, msg: err.message }
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         msg: err.message
+      }, 500)
    }
 })

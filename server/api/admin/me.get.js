@@ -1,2 +1,10 @@
 import { isAdmin } from '../../utils/admin-auth.js'
-export default defineEventHandler(async (event) => ({ status: true, data: { admin: await isAdmin(event) } }))
+import appConfig from '../../utils/app-config.js'
+
+export default defineEventHandler(async (event) => ({
+   creator: appConfig.watermark.creator,
+   status: true,
+   data: {
+      admin: await isAdmin(event)
+   }
+}))

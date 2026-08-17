@@ -1,4 +1,4 @@
-import { getWebRequest } from '../utils/web-request.js'
+import { getWebRequest } from '../utils/index.js'
 import appConfig from '../utils/app-config.js'
 
 function getIpVersion(ip) {

@@ -1,5 +1,4 @@
-import { getCloudflareEnv } from '../utils/cloudflare.js'
-import { getWebRequest } from '../utils/web-request.js'
+import { getCloudflareEnv, getWebRequest } from '../utils/index.js'
 
 function getRandomPublicIp() {
    const pools = [
