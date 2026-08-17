@@ -643,9 +643,11 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style>
 @import '@/assets/css/markdown.css';
+</style>
 
+<style scoped>
 .fs-xs {
    font-size: 0.75rem;
 }
