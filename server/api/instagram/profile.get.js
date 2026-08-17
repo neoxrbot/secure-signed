@@ -2,8 +2,7 @@ import { getCloudflareEnv, jsonResponse } from '../../utils/index.js'
 import appConfig from '../../utils/app-config.js'
 import Instagram from '../../utils/scraper/instagram.js'
 
-// Tetap export meta agar bisa di-list oleh /api/endpoints
-export const meta = {
+export const properties = {
    name: 'Instagram Profile',
    category: 'Instagram',
    premium: true,
@@ -11,10 +10,9 @@ export const meta = {
    parameter: ['username']
 }
 
-// Bungkus handler menggunakan defineApi
 export default defineApi({
-   meta,
-   handler: async (event) => {
+   properties,
+   execution: async (event) => {
       try {
          const query = getQuery(event)
          const username = query.username
