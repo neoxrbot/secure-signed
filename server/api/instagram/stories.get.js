@@ -3,6 +3,11 @@ import appConfig from '../../utils/app-config.js'
 
 import Instagram from '../../utils/scraper/instagram.js'
 
+export const meta = {
+   name: 'Instagram Profile',
+   category: 'Instagram'
+}
+
 export default defineEventHandler(async (event) => {
    try {
       const env = getCloudflareEnv(event)
