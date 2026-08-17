@@ -76,6 +76,8 @@ function getApiEndpoints() {
    return { endpoints, endpointsMap }
 }
 
+const { endpoints, endpointsMap } = getApiEndpoints()
+
 export default defineNuxtConfig({
    compatibilityDate: '2024-04-03',
    devtools: { enabled: false },
