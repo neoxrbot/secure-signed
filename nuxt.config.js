@@ -1,3 +1,72 @@
+import fs from 'node:fs'
+import path from 'node:path'
+
+function capitalize(str) {
+   if (!str) return ''
+   return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+// Fungsi untuk scan folder server/api saat BUILD TIME
+function getApiEndpoints() {
+   const apiDir = path.resolve('./server/api')
+   if (!fs.existsSync(apiDir)) return []
+
+   const endpoints = []
+
+   function scanDir(dir) {
+      const files = fs.readdirSync(dir)
+      for (const file of files) {
+         const fullPath = path.join(dir, file)
+         const stat = fs.statSync(fullPath)
+
+         if (stat.isDirectory()) {
+            scanDir(fullPath)
+         } else if (file.endsWith('.js') || file.endsWith('.ts')) {
+            // Abaikan file endpoints.get.js itu sendiri
+            if (file.includes('endpoints')) continue
+
+            const relativePath = path.relative(apiDir, fullPath).replace(/\\/g, '/')
+
+            // 1. Deteksi HTTP Method
+            const methodMatch = file.match(/\.(get|post|put|delete|patch)\.(js|ts)$/)
+            const method = methodMatch ? methodMatch[1].toUpperCase() : 'ALL'
+
+            // 2. Clean URL Path (misal: instagram/profile.get.js -> /api/instagram/profile)
+            const cleanPath = '/api/' + relativePath
+               .replace(/\.(get|post|put|delete|patch)\.(js|ts)$/, '')
+               .replace(/\.(js|ts)$/, '')
+
+            // 3. Baca isi file untuk ekstrak 'export const meta' via Regex
+            const content = fs.readFileSync(fullPath, 'utf-8')
+
+            const nameMatch = content.match(/name\s*:\s*['"`](.*?)['"`]/)
+            const categoryMatch = content.match(/category\s*:\s*['"`](.*?)['"`]/)
+            const descMatch = content.match(/description\s*:\s*['"`](.*?)['"`]/)
+
+            // Fallback Kategori & Nama
+            const segments = relativePath.split('/')
+            const defaultCategory = segments.length > 1 ? capitalize(segments[0]) : 'General'
+
+            const rawName = segments[segments.length - 1]
+               .replace(/\.(get|post|put|delete|patch)\.(js|ts)$/, '')
+               .replace(/[-_]/g, ' ')
+            const defaultName = capitalize(rawName)
+
+            endpoints.push({
+               path: cleanPath,
+               method: method,
+               category: categoryMatch ? categoryMatch[1] : defaultCategory,
+               name: nameMatch ? nameMatch[1] : defaultName,
+               description: descMatch ? descMatch[1] : ''
+            })
+         }
+      }
+   }
+
+   scanDir(apiDir)
+   return endpoints
+}
+
 export default defineNuxtConfig({
    compatibilityDate: '2024-04-03',
    devtools: { enabled: false },
@@ -52,6 +121,7 @@ export default defineNuxtConfig({
       }
    },
    runtimeConfig: {
+      endpointsList: getApiEndpoints(),
       public: {
          title: 'Secure Signed',
          tagline: 'Security & CDN Utilities',
