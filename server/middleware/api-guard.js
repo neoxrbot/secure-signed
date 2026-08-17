@@ -1,4 +1,5 @@
 import { getCloudflareEnv, jsonResponse } from '../utils/index.js'
+import appConfig from '../utils/app-config.js'
 
 export default defineEventHandler(async (event) => {
    const url = getRequestURL(event)
@@ -20,6 +21,7 @@ export default defineEventHandler(async (event) => {
    // 1. CEK ERROR / MAINTENANCE
    if (endpoint.error) {
       return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
          status: false,
          msg: 'Endpoint ini sedang dalam perbaikan / maintenance'
       }, 503)
@@ -37,6 +39,7 @@ export default defineEventHandler(async (event) => {
 
       if (!userApiKey || userApiKey !== validApiKey) {
          return jsonResponse(event, {
+            creator: appConfig.watermark.creator,
             status: false,
             msg: 'Akses ditolak. Silahkan sertakan ?apikey= atau header x-apikey yang valid'
          }, 401)
@@ -56,6 +59,7 @@ export default defineEventHandler(async (event) => {
 
       if (missingParams.length > 0) {
          return jsonResponse(event, {
+            creator: appConfig.watermark.creator,
             status: false,
             msg: `Parameter wajib diisi: ${missingParams.join(', ')}`
          }, 400)
