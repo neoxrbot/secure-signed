@@ -8,7 +8,7 @@ function capitalize(str) {
 
 function getApiEndpoints() {
    const apiDir = path.resolve('./server/api')
-   if (!fs.existsSync(apiDir)) return []
+   if (!fs.existsSync(apiDir)) return { endpoints: [], endpointsMap: {} }
 
    const endpoints = []
    const endpointsMap = {}
@@ -27,18 +27,15 @@ function getApiEndpoints() {
             const relativePath = path.relative(apiDir, fullPath).replace(/\\/g, '/')
             const content = fs.readFileSync(fullPath, 'utf-8')
 
-            // 1. Ekstrak meta.name (Wajib)
             const nameMatch = content.match(/name\s*:\s*['"`](.*?)['"`]/)
             if (!nameMatch || !nameMatch[1]) continue
 
-            // 2. Ekstrak meta lainnya
             const categoryMatch = content.match(/category\s*:\s*['"`](.*?)['"`]/)
             const descMatch = content.match(/description\s*:\s*['"`](.*?)['"`]/)
-            const premiumMatch = content.match(/premium\s*:\s*(true|false)/)
-            const errorMatch = content.match(/error\s*:\s*(true|false)/)
+            const premiumMatch = content.match(/premium\s*:\s*(true|false)/i)
+            const errorMatch = content.match(/error\s*:\s*(true|false)/i)
             const paramMatch = content.match(/parameter\s*:\s*\[(.*?)\]/s)
 
-            // Parse parameter array (misal: ['url', 'text'])
             let parameterList = []
             if (paramMatch && paramMatch[1]) {
                parameterList = paramMatch[1]
@@ -47,13 +44,13 @@ function getApiEndpoints() {
                   .filter(Boolean)
             }
 
-            // 3. Deteksi Method & Clean Path
             const methodMatch = file.match(/\.(get|post|put|delete|patch)\.(js|ts)$/)
             const method = methodMatch ? methodMatch[1].toUpperCase() : 'ALL'
 
-            const cleanPath = '/api/' + relativePath
+            const cleanPath = ('/api/' + relativePath
                .replace(/\.(get|post|put|delete|patch)\.(js|ts)$/, '')
                .replace(/\.(js|ts)$/, '')
+            ).toLowerCase().replace(/\/$/, '')
 
             const segments = relativePath.split('/')
             const defaultCategory = segments.length > 1 ? capitalize(segments[0]) : 'General'
@@ -64,13 +61,13 @@ function getApiEndpoints() {
                name: nameMatch[1],
                category: categoryMatch ? categoryMatch[1] : defaultCategory,
                description: descMatch ? descMatch[1] : '',
-               premium: premiumMatch ? premiumMatch[1] === 'true' : false,
-               error: errorMatch ? errorMatch[1] === 'true' : false,
+               premium: premiumMatch ? premiumMatch[1].toLowerCase() === 'true' : false,
+               error: errorMatch ? errorMatch[1].toLowerCase() === 'true' : false,
                parameter: parameterList
             }
 
             endpoints.push(endpointData)
-            endpointsMap[cleanPath] = endpointData // Map berdasarkan path URL
+            endpointsMap[cleanPath] = endpointData
          }
       }
    }
@@ -78,8 +75,6 @@ function getApiEndpoints() {
    scanDir(apiDir)
    return { endpoints, endpointsMap }
 }
-
-const { endpoints, endpointsMap } = getApiEndpoints()
 
 export default defineNuxtConfig({
    compatibilityDate: '2024-04-03',

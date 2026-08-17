@@ -1,24 +1,23 @@
-import { getCloudflareEnv, jsonResponse } from '../server/utils/index.js'
+import { getCloudflareEnv, jsonResponse } from '../utils/index.js'
 
 export default defineEventHandler(async (event) => {
    const url = getRequestURL(event)
-   const pathname = url.pathname.replace(/\/$/, '') // Hilangkan trailing slash jika ada
 
-   // Hanya jalankan middleware untuk jalur /api (dan abaikan endpoint listing /api/endpoints)
+   // Normalisasi path: ubah ke lowercase & hilangkan trailing slash di akhir
+   const pathname = url.pathname.toLowerCase().replace(/\/$/, '')
+
    if (!pathname.startsWith('/api') || pathname === '/api/endpoints') return
 
    const config = useRuntimeConfig(event)
    const endpointsMap = config.endpointsMap || {}
 
-   // Cari metadata endpoint berdasarkan URL yang dipanggil
+   // Cari endpoint berdasarkan pathname yang sudah dinormalisasi
    const endpoint = endpointsMap[pathname]
 
-   // Jika endpoint tidak terdaftar di metadata, lewati middleware
+   // Jika endpoint tidak ditemukan di map, lewati
    if (!endpoint) return
 
-   // -------------------------------------------------------------
-   // 1. CEK STATUS ERROR / MAINTENANCE
-   // -------------------------------------------------------------
+   // 1. CEK ERROR / MAINTENANCE
    if (endpoint.error) {
       return jsonResponse(event, {
          status: false,
@@ -26,16 +25,14 @@ export default defineEventHandler(async (event) => {
       }, 503)
    }
 
-   // -------------------------------------------------------------
    // 2. CEK PREMIUM (API KEY)
-   // -------------------------------------------------------------
    if (endpoint.premium) {
       const query = getQuery(event)
       const apiKeyHeader = getHeader(event, 'x-apikey')
       const userApiKey = query.apikey || apiKeyHeader
 
       const env = getCloudflareEnv(event) || {}
-      // Ambil API Key resmi dari Environment Variables Cloudflare Workers / .env
+      // Ambil API Key dari Environment Variables Cloudflare / .env
       const validApiKey = env.API_KEY || process.env.API_KEY || 'SECRET_API_KEY_ANDA'
 
       if (!userApiKey || userApiKey !== validApiKey) {
@@ -46,9 +43,7 @@ export default defineEventHandler(async (event) => {
       }
    }
 
-   // -------------------------------------------------------------
-   // 3. CEK PARAMETER WAJIB (QUERY PARAMETERS)
-   // -------------------------------------------------------------
+   // 3. CEK PARAMETER
    if (endpoint.parameter && endpoint.parameter.length > 0) {
       const query = getQuery(event)
       const missingParams = []
