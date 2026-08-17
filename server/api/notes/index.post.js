@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
       return jsonResponse(event, {
          creator: appConfig.watermark.creator,
          status: false,
-         message: 'Unauthorized'
+         msg: 'Unauthorized'
       }, 401)
 
    const body = await readBody(event) || {}
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
       return jsonResponse(event, {
          creator: appConfig.watermark.creator,
          status: false,
-         message: 'Title and content are required'
+         msg: 'Title and content are required'
       }, 400)
 
    try {
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
       return jsonResponse(event, {
          creator: appConfig.watermark.creator,
          status: false,
-         message: err.message
+         msg: err.message
       }, 500)
    }
 })

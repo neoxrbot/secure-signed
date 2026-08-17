@@ -21,14 +21,14 @@ export default defineEventHandler(async (event) => {
       return jsonResponse(event, {
          creator: appConfig.watermark.creator,
          status: false,
-         message: 'Unauthorized: Invalid secret token'
+         msg: 'Unauthorized: Invalid secret token'
       }, 401)
 
    if (!db)
       return jsonResponse(event, {
          creator: appConfig.watermark.creator,
          status: false,
-         message: 'Database D1 binding not found'
+         msg: 'Database D1 binding not found'
       }, 500)
 
    try {
@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
       return jsonResponse(event, {
          creator: appConfig.watermark.creator,
          status: false,
-         message: '`Backup failed: ${err.message}'
+         msg: '`Backup failed: ${err.message}'
       }, 500)
    }
 })

@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
    const env = event.context.cloudflare?.env || {}
 
    if (query.secret !== env.CRON_SECRET) {
-      return { status: false, message: 'Unauthorized' }
+      return { status: false, msg: 'Unauthorized' }
    }
 
    const stats = await cleanDatabase(env.DB, 30)
