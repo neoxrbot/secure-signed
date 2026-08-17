@@ -1,7 +1,7 @@
 import { getCloudflareEnv } from '../../../utils/index.js'
 import { isAdmin } from '../../../utils/admin-auth.js'
 import { getNoteById, incrementNoteReads } from '../../../utils/database.js'
-import appConfig from '../../../utils/index.js'
+import appConfig from '../../../utils/app-config.js'
 
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
