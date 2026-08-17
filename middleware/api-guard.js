@@ -1,4 +1,4 @@
-import { getCloudflareEnv, jsonResponse } from '../utils/index.js'
+import { getCloudflareEnv, jsonResponse } from '../server/utils/index.js'
 
 export default defineEventHandler(async (event) => {
    const url = getRequestURL(event)
