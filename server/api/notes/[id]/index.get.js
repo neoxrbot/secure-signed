@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
    await incrementNoteReads(env.DB, id)
 
    return {
-      creator: appConfig.watermwak.creator,
+      creator: appConfig.watermark.creator,
       status: true,
       data: {
          ...note,
