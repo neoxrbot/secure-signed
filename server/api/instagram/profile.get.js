@@ -1,5 +1,6 @@
 import { getCloudflareEnv, jsonResponse } from '../../utils/index.js'
 import appConfig from '../../utils/app-config.js'
+
 import Instagram from '../../utils/scraper/instagram.js'
 
 export const properties = {
