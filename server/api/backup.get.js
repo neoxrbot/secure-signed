@@ -1,13 +1,5 @@
-import { getCloudflareEnv, jsonResponse } from '../utils/index.js'
+import { getCloudflareEnv, jsonResponse, escapeSqlValue } from '../utils/index.js'
 import appConfig from '../utils/app-config.js'
-
-function escapeSqlValue(val) {
-   if (val === null || val === undefined) return 'NULL'
-   if (typeof val === 'number') return val.toString()
-   if (typeof val === 'boolean') return val ? '1' : '0'
-   const str = String(val).replace(/'/g, "''")
-   return `'${str}'`
-}
 
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)

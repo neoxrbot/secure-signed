@@ -1,21 +1,4 @@
-import { getCloudflareEnv, getWebRequest } from '../utils/index.js'
-
-function getRandomPublicIp() {
-   const pools = [
-      [73, Math.floor(Math.random() * 255)],
-      [24, Math.floor(Math.random() * 255)],
-      [68, Math.floor(Math.random() * 255)],
-      [107, Math.floor(Math.random() * 128) + 128],
-      [108, Math.floor(Math.random() * 255)],
-      [71, Math.floor(Math.random() * 255)],
-      [98, Math.floor(Math.random() * 255)],
-      [172, Math.floor(Math.random() * 31) + 16]
-   ]
-   const p = pools[Math.floor(Math.random() * pools.length)]
-   const b3 = Math.floor(Math.random() * 254) + 1
-   const b4 = Math.floor(Math.random() * 254) + 1
-   return `${p[0]}.${p[1]}.${b3}.${b4}`
-}
+import { getCloudflareEnv, getWebRequest, getRandomPublicIp } from '../utils/index.js'
 
 export default defineEventHandler(async (event) => {
    const request = getWebRequest(event)

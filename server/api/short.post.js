@@ -1,58 +1,59 @@
-import { getCloudflareEnv, getWebRequest } from '../utils/index.js'
+import { getCloudflareEnv, getWebRequest, generateShortId, isValidUrl } from '../utils/index.js'
 import { createShortUrl, cleanOldUrls } from '../utils/database.js'
 import appConfig from '../utils/app-config.js'
 
-function generateShortId(length = 6) {
-   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-   let res = ''
-   for (let i = 0; i < length; i++) res += chars.charAt(Math.floor(Math.random() * chars.length))
-   return res
+export const properties = {
+   error: false
 }
 
-function isValidUrl(string) {
-   try {
-      const parsed = new URL(string)
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
-   } catch {
-      return false
-   }
-}
+export default defineApi({
+   properties,
+   execution: async (event) => {
+      const request = getWebRequest(event)
+      const env = getCloudflareEnv(event)
+      const url = new URL(request.url)
+      const db = env.DB
 
-export default defineEventHandler(async (event) => {
-   const request = getWebRequest(event)
-   const env = getCloudflareEnv(event)
-   const url = new URL(request.url)
-   const db = env.DB
+      try {
+         const body = await readBody(event)
+         const originalUrl = body?.url
 
-   try {
-      const body = await readBody(event)
-      const originalUrl = body?.url
+         if (!originalUrl)
+            return jsonResponse(event, {
+               creator: appConfig.watermark.creator,
+               status: false,
+               msg: 'URL parameter is required'
+            }, 400)
 
-      if (!originalUrl) {
-         return new Response(JSON.stringify({ status: false, msg: 'URL parameter is required' }), { status: 400 })
-      }
+         if (!isValidUrl(originalUrl))
+            return jsonResponse(event, {
+               creator: appConfig.watermark.creator,
+               status: false,
+               msg: 'Invalid URL format (must start with http:// or https://)'
+            }, 400)
 
-      if (!isValidUrl(originalUrl)) {
-         return new Response(JSON.stringify({ status: false, msg: 'Invalid URL format (must start with http:// or https://)' }), { status: 400 })
-      }
+         const shortId = generateShortId(6)
+         await createShortUrl(db, shortId, originalUrl)
 
-      const shortId = generateShortId(6)
-      await createShortUrl(db, shortId, originalUrl)
-
-      if (event.context.cloudflare?.context) {
-         event.context.cloudflare.context.waitUntil(cleanOldUrls(db, 30))
-      }
-
-      return {
-         creator: appConfig.watermark.creator,
-         status: true,
-         data: {
-            id: shortId,
-            url: `${url.origin}/s/${shortId}`,
-            original_url: originalUrl
+         if (event.context.cloudflare?.context) {
+            event.context.cloudflare.context.waitUntil(cleanOldUrls(db, 30))
          }
+
+         return jsonResponse(event, {
+            creator: appConfig.watermark.creator,
+            status: true,
+            data: {
+               id: shortId,
+               url: `${url.origin}/s/${shortId}`,
+               original_url: originalUrl
+            }
+         })
+      } catch (err) {
+         return jsonResponse(event, {
+            creator: appConfig.watermark.creator,
+            status: false,
+            msg: err.message
+         }, 500)
       }
-   } catch (err) {
-      return { status: false, msg: err.message }
    }
 })

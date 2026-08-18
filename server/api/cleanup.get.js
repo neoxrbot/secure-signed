@@ -1,4 +1,5 @@
 import { cleanDatabase } from '../utils/database.js'
+import appConfig from '../utils/app-config.js'
 
 export default defineEventHandler(async (event) => {
    const query = getQuery(event)
@@ -9,5 +10,9 @@ export default defineEventHandler(async (event) => {
    }
 
    const stats = await cleanDatabase(env.DB, 30)
-   return { status: true, stats }
+   return jsonResponse(event, {
+      creator: appConfig.watermark.creator,
+      status: true,
+      stats
+   })
 })
