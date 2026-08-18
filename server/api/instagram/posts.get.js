@@ -5,7 +5,7 @@ import Instagram from '../../utils/scraper/instagram.js'
 
 export const properties = {
    name: 'Instagram Posts',
-   category: 'Instagram',
+   category: 'instagram',
    premium: true,
    error: false,
    parameter: ['username']

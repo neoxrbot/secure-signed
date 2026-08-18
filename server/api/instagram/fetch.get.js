@@ -5,7 +5,7 @@ import Instagram from '../../utils/scraper/instagram.js'
 
 export const properties = {
    name: 'Instagram Fetch',
-   category: 'Instagram',
+   category: 'instagram',
    premium: true,
    error: false,
    parameter: ['url']

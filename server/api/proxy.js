@@ -1,4 +1,5 @@
-import { getCloudflareEnv, getWebRequest, getRandomPublicIp } from '../utils/index.js'
+import { getCloudflareEnv, getWebRequest, getRandomPublicIp, jsonResponse } from '../utils/index.js'
+import appConfig from '../utils/app-config.js'
 
 export default defineEventHandler(async (event) => {
    const request = getWebRequest(event)
@@ -151,11 +152,11 @@ export default defineEventHandler(async (event) => {
          statusText: upstream.statusText,
          headers: responseHeaders
       })
-
    } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), {
-         status: 500,
-         headers: { "Content-Type": "application/json" }
+      return jsonResponse(event, {
+         creator: appConfig.watermark.creator,
+         status: false,
+         msg: err.message
       })
    }
 })
