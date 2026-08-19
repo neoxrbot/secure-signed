@@ -6,52 +6,54 @@ export function defineApi(options) {
    const execution = options.execution || options.handler
 
    return defineEventHandler(async (event) => {
-      // 1. CEK STATUS ERROR / MAINTENANCE
-      if (properties.error) {
+      if (properties.error)
          return jsonResponse(event, {
             creator: appConfig.watermark.creator,
             status: false,
-            msg: 'Endpoint ini sedang dalam perbaikan / maintenance'
+            msg: 'This endpoint is currently under maintenance.'
          }, 503)
+
+      const method = getMethod(event)
+      const query = getQuery(event) || {}
+
+      let body = {}
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+         body = (await readBody(event).catch(() => ({}))) || {}
       }
 
-      // 2. CEK PREMIUM (API KEY)
+      const params = { ...query, ...body }
+
       if (properties.premium) {
-         const query = getQuery(event)
          const apiKeyHeader = getHeader(event, 'x-apikey')
-         const userApiKey = query.apikey || apiKeyHeader
+         const userApiKey = params.apikey || apiKeyHeader
 
          const env = getCloudflareEnv(event) || {}
-         // Mengambil API_KEY dari environment variable Cloudflare Workers
-         const validApiKey = env.API_KEY || process.env.API_KEY || 'SECRET_KEY_ANDA'
+         const validApiKey = env.API_KEY || process.env.API_KEY || ''
 
-         if (!userApiKey || userApiKey !== validApiKey) {
+         if (!userApiKey || userApiKey !== validApiKey)
             return jsonResponse(event, {
                creator: appConfig.watermark.creator,
                status: false,
-               msg: 'Akses ditolak. Silahkan sertakan ?apikey= atau header x-apikey yang valid'
+               msg: 'Access denied. Provide a valid ?apikey= query parameter or x-apikey header.'
             }, 401)
-         }
       }
 
-      // 3. CEK PARAMETER WAJIB
       if (properties.parameter && Array.isArray(properties.parameter) && properties.parameter.length > 0) {
-         const query = getQuery(event)
          const missingParams = []
 
          for (const param of properties.parameter) {
-            if (!query[param] || String(query[param]).trim() === '') {
+            const val = params[param]
+            if (val === undefined || val === null || String(val).trim() === '') {
                missingParams.push(param)
             }
          }
 
-         if (missingParams.length > 0) {
+         if (missingParams.length > 0)
             return jsonResponse(event, {
                creator: appConfig.watermark.creator,
                status: false,
-               msg: `Parameter wajib diisi: ${missingParams.join(', ')}`
+               msg: `Missing required parameter(s): ${missingParams.join(', ')}`
             }, 400)
-         }
       }
 
       return execution(event)
