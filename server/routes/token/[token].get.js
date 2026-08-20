@@ -1,42 +1,72 @@
 import { getCloudflareEnv } from '../../utils/index.js'
-import { getSignedCdn, recordCdnDownload, cleanExpiredCdn } from '../../utils/database.js'
+import {
+   getSignedCdn,
+   recordCdnDownload,
+   cleanExpiredCdn
+} from '../../utils/database.js'
 
 function isDomainAllowed(domain, allowedPatternsStr) {
    if (!allowedPatternsStr) return true
-   const patterns = allowedPatternsStr.split(',').map(s => s.trim().toLowerCase())
+
+   const patterns = allowedPatternsStr
+      .split(',')
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean)
+
    const targetDomain = domain.toLowerCase()
 
    return patterns.some(pattern => {
       if (pattern.startsWith('*.')) {
          const baseDomain = pattern.slice(2)
-         return targetDomain === baseDomain || targetDomain.endsWith('.' + baseDomain)
+
+         return (
+            targetDomain === baseDomain ||
+            targetDomain.endsWith('.' + baseDomain)
+         )
       }
+
       return targetDomain === pattern
    })
 }
 
 /**
- * Support semua karakter di filename (UTF-8, simbol, ø, kanji, emoji, dll.)
+ * Content-Disposition yang aman untuk UTF-8 filename.
  */
 function formatContentDisposition(filename, inline = false) {
-   if (!filename || typeof filename !== 'string') return inline ? 'inline' : 'attachment'
+   if (!filename || typeof filename !== 'string') {
+      return inline ? 'inline' : 'attachment'
+   }
 
    let cleanName = filename
-   try { cleanName = decodeURIComponent(filename) } catch { }
-   cleanName = cleanName.replace(/[\r\n]/g, '').trim()
 
-   const asciiFallback = cleanName
-      .replace(/["\\]/g, '')
-      .replace(/[^\x20-\x7E]/g, '_') || 'file'
+   try {
+      cleanName = decodeURIComponent(filename)
+   } catch { }
+
+   cleanName = cleanName
+      .replace(/[\r\n]/g, '')
+      .trim()
+
+   const asciiFallback =
+      cleanName
+         .replace(/["\\]/g, '')
+         .replace(/[^\x20-\x7E]/g, '_')
+         .trim() || 'file'
 
    const encodedUtf8 = encodeURIComponent(cleanName)
-      .replace(/['()]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
+      .replace(/['()]/g, char =>
+         '%' + char.charCodeAt(0).toString(16).toUpperCase()
+      )
       .replace(/\*/g, '%2A')
 
    const type = inline ? 'inline' : 'attachment'
+
    return `${type}; filename="${asciiFallback}"; filename*=UTF-8''${encodedUtf8}`
 }
 
+/**
+ * Pastikan URL valid.
+ */
 function safeTargetUrl(urlStr) {
    try {
       return new URL(urlStr).href
@@ -46,163 +76,576 @@ function safeTargetUrl(urlStr) {
 }
 
 /**
- * Helper pembaca header client yang kompatibel di semua runtime (Nuxt, Nitro, Cloudflare)
+ * Ambil header request secara kompatibel
+ * dengan Nitro / Node / Cloudflare.
  */
-function getClientHeader(event, headerName) {
+function getClientHeader(event, name) {
    try {
       if (typeof getRequestHeader === 'function') {
-         const val = getRequestHeader(event, headerName)
-         if (val) return val
+         const value = getRequestHeader(event, name)
+
+         if (value) return value
       }
+
       if (typeof getHeader === 'function') {
-         const val = getHeader(event, headerName)
-         if (val) return val
+         const value = getHeader(event, name)
+
+         if (value) return value
       }
    } catch { }
 
-   const lower = headerName.toLowerCase()
+   const lower = name.toLowerCase()
+
    if (event.node?.req?.headers) {
-      return event.node.req.headers[lower] || event.node.req.headers[headerName]
+      return (
+         event.node.req.headers[lower] ||
+         event.node.req.headers[name] ||
+         null
+      )
    }
+
    if (event.web?.request?.headers?.get) {
-      return event.web.request.headers.get(headerName)
+      return event.web.request.headers.get(name)
    }
+
    if (event.request?.headers?.get) {
-      return event.request.headers.get(headerName)
+      return event.request.headers.get(name)
    }
+
    return null
 }
 
-export default defineEventHandler(async (event) => {
+/**
+ * Header yang aman untuk diteruskan dari upstream.
+ *
+ * Kita sengaja TIDAK meneruskan semua header,
+ * karena beberapa header hop-by-hop dapat menyebabkan
+ * masalah pada proxy/streaming.
+ */
+const RESPONSE_HEADERS = [
+   'accept-ranges',
+   'cache-control',
+   'content-length',
+   'content-range',
+   'content-type',
+   'etag',
+   'expires',
+   'last-modified',
+   'pragma'
+]
+
+export default defineEventHandler(async event => {
    const env = getCloudflareEnv(event)
+
    const params = event.context.params || {}
    const token = params.token
+
    const db = env.DB
 
-   const url = new URL(event.node?.req?.url || event.web?.request?.url, 'http://localhost')
-   const requestedDomain = url.searchParams.get('domain') || ''
-   const isInline = url.searchParams.get('inline') === 'true' || url.searchParams.has('play')
+   const requestUrl = new URL(
+      event.node?.req?.url ||
+      event.web?.request?.url ||
+      '/',
+      'http://localhost'
+   )
+
+   const requestedDomain =
+      requestUrl.searchParams.get('domain') || ''
+
+   const isInline =
+      requestUrl.searchParams.get('inline') === 'true' ||
+      requestUrl.searchParams.has('play')
 
    try {
-      const allowedConfig = env.ALLOWED_CDN_DOMAINS || 'neoxr.eu, *.neoxr.eu'
-      if (!requestedDomain || !isDomainAllowed(requestedDomain, allowedConfig)) {
-         return new Response(`Domain '${requestedDomain}' is not authorized for signed CDN.`, { status: 403 })
+      /*
+       * ============================================================
+       * 1. VALIDASI DOMAIN
+       * ============================================================
+       */
+
+      const allowedConfig =
+         env.ALLOWED_CDN_DOMAINS ||
+         'neoxr.eu, *.neoxr.eu'
+
+      if (
+         !requestedDomain ||
+         !isDomainAllowed(
+            requestedDomain,
+            allowedConfig
+         )
+      ) {
+         return new Response(
+            `Domain '${requestedDomain}' is not authorized for signed CDN.`,
+            {
+               status: 403
+            }
+         )
       }
 
-      const record = await getSignedCdn(db, token)
-      if (!record) return new Response('Invalid or unknown CDN token', { status: 404 })
+      /*
+       * ============================================================
+       * 2. VALIDASI TOKEN
+       * ============================================================
+       */
 
-      const nowInSeconds = Math.floor(Date.now() / 1000)
-      const expiredAt = record.expired_at > 1e11 ? Math.floor(record.expired_at / 1000) : record.expired_at
+      const record = await getSignedCdn(
+         db,
+         token
+      )
 
-      if (nowInSeconds > expiredAt) {
-         event.waitUntil(cleanExpiredCdn(db))
-         return new Response('CDN link has expired', { status: 410 })
+      if (!record) {
+         return new Response(
+            'Invalid or unknown CDN token',
+            {
+               status: 404
+            }
+         )
       }
+
+      /*
+       * ============================================================
+       * 3. CEK EXPIRATION
+       * ============================================================
+       */
+
+      const now = Math.floor(
+         Date.now() / 1000
+      )
+
+      const expiredAt =
+         record.expired_at > 1e11
+            ? Math.floor(record.expired_at / 1000)
+            : record.expired_at
+
+      if (now > expiredAt) {
+         event.waitUntil(
+            cleanExpiredCdn(db)
+         )
+
+         return new Response(
+            'CDN link has expired',
+            {
+               status: 410
+            }
+         )
+      }
+
+      /*
+       * ============================================================
+       * 4. REQUEST METHOD
+       * ============================================================
+       */
+
+      const method =
+         event.node?.req?.method ||
+         event.web?.request?.method ||
+         'GET'
+
+      /*
+       * ============================================================
+       * 5. REQUEST HEADERS
+       *
+       * Penting untuk video/audio/file besar:
+       *
+       * Range
+       * If-Range
+       * If-None-Match
+       * If-Modified-Since
+       * User-Agent
+       *
+       * Jangan forward semua header client.
+       * ============================================================
+       */
 
       const forwardHeaders = new Headers()
 
-      // 1. Custom headers dari database
+      const range = getClientHeader(
+         event,
+         'range'
+      )
+
+      const ifRange = getClientHeader(
+         event,
+         'if-range'
+      )
+
+      const ifNoneMatch = getClientHeader(
+         event,
+         'if-none-match'
+      )
+
+      const ifModifiedSince = getClientHeader(
+         event,
+         'if-modified-since'
+      )
+
+      const userAgent = getClientHeader(
+         event,
+         'user-agent'
+      )
+
+      if (range) {
+         forwardHeaders.set(
+            'Range',
+            range
+         )
+      }
+
+      if (ifRange) {
+         forwardHeaders.set(
+            'If-Range',
+            ifRange
+         )
+      }
+
+      if (ifNoneMatch) {
+         forwardHeaders.set(
+            'If-None-Match',
+            ifNoneMatch
+         )
+      }
+
+      if (ifModifiedSince) {
+         forwardHeaders.set(
+            'If-Modified-Since',
+            ifModifiedSince
+         )
+      }
+
+      if (userAgent) {
+         forwardHeaders.set(
+            'User-Agent',
+            userAgent
+         )
+      }
+
+      /*
+       * ============================================================
+       * 6. CUSTOM HEADERS DARI DATABASE
+       * ============================================================
+       */
+
       if (record.custom_headers) {
          try {
-            const parsed = typeof record.custom_headers === 'string'
-               ? JSON.parse(record.custom_headers)
-               : record.custom_headers
-            for (const [k, v] of Object.entries(parsed)) {
-               try {
-                  forwardHeaders.set(k, String(v).replace(/[^\x20-\x7E]/g, ''))
-               } catch { }
+            const parsed =
+               typeof record.custom_headers === 'string'
+                  ? JSON.parse(record.custom_headers)
+                  : record.custom_headers
+
+            if (
+               parsed &&
+               typeof parsed === 'object'
+            ) {
+               for (
+                  const [key, value]
+                  of Object.entries(parsed)
+               ) {
+                  try {
+                     if (
+                        value !== undefined &&
+                        value !== null
+                     ) {
+                        forwardHeaders.set(
+                           key,
+                           String(value)
+                              .replace(/[\r\n]/g, '')
+                        )
+                     }
+                  } catch { }
+               }
             }
-         } catch (e) { }
+         } catch (error) {
+            console.error(
+               '[CDN Custom Header Error]',
+               error
+            )
+         }
       }
 
-      // 2. Forward Header Penting untuk Streaming Video (Range, If-Range, User-Agent)
-      const rangeHeader = getClientHeader(event, 'range')
-      if (rangeHeader) {
-         forwardHeaders.set('Range', rangeHeader)
-      }
+      /*
+       * ============================================================
+       * 7. FETCH UPSTREAM
+       *
+       * PENTING:
+       * body TIDAK di-buffer.
+       *
+       * upstreamRes.body langsung diteruskan
+       * ke Response di bawah.
+       * ============================================================
+       */
 
-      const ifRangeHeader = getClientHeader(event, 'if-range')
-      if (ifRangeHeader) {
-         forwardHeaders.set('If-Range', ifRangeHeader)
-      }
+      const targetUrl =
+         safeTargetUrl(
+            record.target_url
+         )
 
-      const userAgent = getClientHeader(event, 'user-agent')
-      if (userAgent) {
-         forwardHeaders.set('User-Agent', userAgent)
-      }
+      console.log(
+         '[CDN FETCH]',
+         method,
+         targetUrl,
+         {
+            range
+         }
+      )
 
-      // 3. Fetch ke upstream
-      const targetUrl = safeTargetUrl(record.target_url)
-      const upstreamRes = await fetch(targetUrl, {
-         headers: forwardHeaders,
-         method: event.node?.req?.method || 'GET'
-      })
+      const upstreamRes = await fetch(
+         targetUrl,
+         {
+            method,
+            headers: forwardHeaders,
+            redirect: 'follow'
+         }
+      )
 
-      // Dukung status 200 (OK), 206 (Partial Video), 304 (Cache), 416 (Range Satisfiable)
-      const validStatuses = [200, 206, 304, 416]
-      if (!upstreamRes.ok && !validStatuses.includes(upstreamRes.status)) {
-         return new Response(`Failed fetching remote file: ${upstreamRes.status}`, { status: 502 })
-      }
+      /*
+       * ============================================================
+       * 8. VALIDASI STATUS
+       * ============================================================
+       */
 
-      const contentLength = parseInt(upstreamRes.headers.get('content-length') || '0', 10)
-      if (upstreamRes.status === 200 && contentLength > record.max_bytes) {
-         return new Response('File size exceeds allowed signed limit', { status: 413 })
-      }
+      const allowedStatuses = [
+         200,
+         206,
+         304,
+         416
+      ]
 
-      // 4. Catat download hanya pada full download / chunk pertama agar TIDAK membebani database
-      event.waitUntil((async () => {
-         try {
-            const isFirstChunk = !rangeHeader || rangeHeader.startsWith('bytes=0-')
-            if (isFirstChunk && upstreamRes.status !== 416) {
-               await recordCdnDownload(db, token, contentLength)
+      if (
+         !allowedStatuses.includes(
+            upstreamRes.status
+         )
+      ) {
+         console.error(
+            '[CDN UPSTREAM ERROR]',
+            {
+               status: upstreamRes.status,
+               url: targetUrl
             }
-         } catch (dbErr) {
-            console.error('[DB Track Error]:', dbErr)
-         }
-      })())
+         )
 
-      // 5. Susun Header Output (JANGAN hapus Content-Length & Content-Range untuk Video)
-      const outHeaders = new Headers()
-      for (const [key, value] of upstreamRes.headers.entries()) {
-         const lowerKey = key.toLowerCase()
-         // Hapus hanya transfer & content-encoding (karena body sudah di-decode/stream)
-         if (['transfer-encoding', 'content-encoding', 'content-disposition'].includes(lowerKey)) {
-            continue
-         }
-         try {
-            const safeVal = value.replace(/[^\x20-\x7E]/g, (c) => encodeURIComponent(c))
-            outHeaders.set(key, safeVal)
-         } catch { }
+         return new Response(
+            `Failed fetching remote file: ${upstreamRes.status}`,
+            {
+               status: 502
+            }
+         )
       }
 
-      // Beritahu video player bahwa server mendukung fitur seeking/range
-      if (!outHeaders.has('Accept-Ranges')) {
-         outHeaders.set('Accept-Ranges', 'bytes')
+      /*
+       * ============================================================
+       * 9. AMBIL UKURAN FILE
+       * ============================================================
+       */
+
+      const contentLengthHeader =
+         upstreamRes.headers.get(
+            'content-length'
+         )
+
+      const contentLength =
+         contentLengthHeader
+            ? Number(contentLengthHeader)
+            : 0
+
+      /*
+       * ============================================================
+       * 10. VALIDASI MAX SIZE
+       *
+       * Hanya lakukan pada 200.
+       *
+       * Untuk 206, Content-Length adalah ukuran CHUNK,
+       * bukan ukuran keseluruhan file.
+       * ============================================================
+       */
+
+      if (
+         upstreamRes.status === 200 &&
+         Number.isFinite(
+            contentLength
+         ) &&
+         contentLength > Number(record.max_bytes)
+      ) {
+         return new Response(
+            'File size exceeds allowed signed limit',
+            {
+               status: 413
+            }
+         )
       }
 
-      outHeaders.set('Access-Control-Allow-Origin', '*')
-      outHeaders.set('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length')
+      /*
+       * ============================================================
+       * 11. CATAT DOWNLOAD
+       * ============================================================
+       */
+
+      event.waitUntil(
+         (async () => {
+            try {
+               const isFirstChunk =
+                  !range ||
+                  range.startsWith('bytes=0-')
+
+               if (
+                  isFirstChunk &&
+                  upstreamRes.status !== 416
+               ) {
+                  await recordCdnDownload(
+                     db,
+                     token,
+                     contentLength
+                  )
+               }
+            } catch (error) {
+               console.error(
+                  '[DB Track Error]',
+                  error
+               )
+            }
+         })()
+      )
+
+      /*
+       * ============================================================
+       * 12. RESPONSE HEADERS
+       *
+       * Jangan copy semua header upstream.
+       * Hanya header yang relevan untuk file delivery.
+       * ============================================================
+       */
+
+      const responseHeaders =
+         new Headers()
+
+      for (
+         const name
+         of RESPONSE_HEADERS
+      ) {
+         const value =
+            upstreamRes.headers.get(
+               name
+            )
+
+         if (value) {
+            responseHeaders.set(
+               name,
+               value
+            )
+         }
+      }
+
+      /*
+       * Pastikan browser tahu bahwa
+       * Range request didukung.
+       */
+
+      if (
+         !responseHeaders.has(
+            'accept-ranges'
+         )
+      ) {
+         responseHeaders.set(
+            'Accept-Ranges',
+            'bytes'
+         )
+      }
+
+      /*
+       * CORS
+       */
+
+      responseHeaders.set(
+         'Access-Control-Allow-Origin',
+         '*'
+      )
+
+      responseHeaders.set(
+         'Access-Control-Allow-Headers',
+         'Range, Content-Type, Authorization'
+      )
+
+      responseHeaders.set(
+         'Access-Control-Expose-Headers',
+         'Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag, Last-Modified'
+      )
+
+      /*
+       * Content-Disposition
+       */
 
       if (record.filename) {
-         outHeaders.set('Content-Disposition', formatContentDisposition(record.filename, isInline))
+         responseHeaders.set(
+            'Content-Disposition',
+            formatContentDisposition(
+               record.filename,
+               isInline
+            )
+         )
       }
 
-      // Jika response 304 (Not Modified), body harus kosong
-      if (upstreamRes.status === 304) {
-         return new Response(null, {
-            status: 304,
-            headers: outHeaders
-         })
+      /*
+       * ============================================================
+       * 13. 304
+       * ============================================================
+       */
+
+      if (
+         upstreamRes.status === 304
+      ) {
+         return new Response(
+            null,
+            {
+               status: 304,
+               headers: responseHeaders
+            }
+         )
       }
 
-      return new Response(upstreamRes.body, {
-         status: upstreamRes.status, // Menjaga status 206 Partial Content
-         headers: outHeaders
-      })
+      /*
+       * ============================================================
+       * 14. STREAMING RESPONSE
+       *
+       * INI BAGIAN TERPENTING.
+       *
+       * Jangan:
+       *
+       * await upstreamRes.arrayBuffer()
+       * await upstreamRes.blob()
+       * await upstreamRes.text()
+       *
+       * karena itu akan membuat file besar
+       * masuk ke memory.
+       * ============================================================
+       */
 
-   } catch (err) {
-      console.error('[CDN Worker Error]:', err)
-      return new Response(`Error: ${err.message}`, { status: 500 })
+      return new Response(
+         upstreamRes.body,
+         {
+            status: upstreamRes.status,
+            headers: responseHeaders
+         }
+      )
+
+   } catch (error) {
+      console.error(
+         '[CDN Worker Error]',
+         error
+      )
+
+      const message =
+         error instanceof Error
+            ? error.message
+            : String(error)
+
+      return new Response(
+         `Error: ${message}`,
+         {
+            status: 500,
+            headers: {
+               'Content-Type':
+                  'text/plain; charset=utf-8'
+            }
+         }
+      )
    }
 })
