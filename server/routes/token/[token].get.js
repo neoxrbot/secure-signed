@@ -15,6 +15,25 @@ function isDomainAllowed(domain, allowedPatternsStr) {
    })
 }
 
+/**
+ * Helper untuk format Content-Disposition agar support semua karakter (UTF-8, Simbol, Emoji, Spasi)
+ */
+function formatContentDisposition(filename) {
+   if (!filename) return 'attachment'
+
+   // 1. Fallback ASCII aman: Ganti karakter non-ASCII dan kutip ganda agar tidak crash di HTTP header
+   const asciiFallback = filename
+      .replace(/[\r\n"]/g, '_')
+      .replace(/[^\x20-\x7E]/g, '_')
+
+   // 2. RFC 5987 / RFC 6266 UTF-8 encoding (Support semua karakter)
+   const utf8Filename = encodeURIComponent(filename)
+      .replace(/['()]/g, escape)
+      .replace(/\*/g, '%2A')
+
+   return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${utf8Filename}`
+}
+
 export default defineEventHandler(async (event) => {
    const env = getCloudflareEnv(event)
    const params = event.context.params || {}
@@ -74,8 +93,9 @@ export default defineEventHandler(async (event) => {
       outHeaders.delete('content-length')
       outHeaders.delete('transfer-encoding')
 
+      // PERBAIKAN DI SINI:
       if (record.filename) {
-         outHeaders.set('Content-Disposition', `attachment; filename="${record.filename}"`)
+         outHeaders.set('Content-Disposition', formatContentDisposition(record.filename))
       }
 
       return new Response(upstreamRes.body, {
