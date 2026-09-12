@@ -43,6 +43,7 @@ interface Social {
 
 const socials: Social[] = [
    { name: 'GitHub', handle: '@neoxr', icon: 'bi bi-github', url: 'https://github.com/neoxr' },
+   { name: 'WhatsApp', handle: '+62 858-8777-6722', icon: 'bi bi-whatsapp', url: 'https://wa.me/6285887776722' },
    { name: 'Telegram', handle: '@neoxr', icon: 'bi bi-telegram', url: 'https://t.me/neoxr' },
    { name: 'Instagram', handle: '@neoxr.creative', icon: 'bi bi-instagram', url: 'https://instagram.com/neoxr.creative' },
    { name: 'Email', handle: 'contact@neoxr.eu', icon: 'bi bi-envelope-at-fill', url: 'mailto:contact@neoxr.eu' }
