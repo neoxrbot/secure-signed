@@ -1,0 +1,8 @@
+Review the provided Pull Request diff.
+
+Main review focus:
+1. Asynchronous Handling: Ensure correct use of async/await or Promises to prevent memory leaks and unhandled rejections.
+2. Efficiency & Performance: Identify and optimize loops, array/object manipulation, and I/O calls.
+3. Readability: Ensure clean module patterns (specifically ESM) and highly modular functions.
+
+Provide direct feedback on specific lines that need improvement. Include a brief explanation and a code snippet demonstrating the fix.
