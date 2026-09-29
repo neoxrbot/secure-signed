@@ -15,8 +15,8 @@ export default defineApi({
    properties,
    execution: async (event) => {
       try {
-         const query = getQuery(event)
-         const username = query.username
+         const input = event.context.input || getQuery(event)
+         const username = input.username
 
          const env = getCloudflareEnv(event) || {}
          const customCookie = getHeader(event, 'x-instagram-cookie')

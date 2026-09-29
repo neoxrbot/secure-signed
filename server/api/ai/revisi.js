@@ -18,15 +18,17 @@ export default defineApi({
    execution: async (event) => {
       try {
          const env = getCloudflareEnv(event)
-         const query = getQuery(event)
-         const diff = query.prompt
 
-         if (!diff)
+         const input = event.context.input || getQuery(event)
+         const diff = input.prompt
+
+         if (!diff) {
             return jsonResponse(event, {
                creator: appConfig.watermark.creator,
                status: false,
                msg: 'Git diff is required'
-            })
+            }, 400)
+         }
 
          const message = await openRouter({
             apiKey: env?.OPENROUTER_API,
