@@ -47,6 +47,10 @@ export default defineEventHandler(async (event) => {
       ...(typeof body === 'object' && body !== null ? body : {})
    }
 
+   event.context._query = input
+   event.context.query = input
+   event.context.input = input
+
    if (endpoint.premium) {
       const apiKeyHeader = getHeader(event, 'x-apikey')
 
