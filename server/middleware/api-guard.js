@@ -4,21 +4,23 @@ import appConfig from '../utils/app-config.js'
 export default defineEventHandler(async (event) => {
    const url = getRequestURL(event)
 
-   // Normalisasi path: ubah ke lowercase & hilangkan trailing slash di akhir
-   const pathname = url.pathname.toLowerCase().replace(/\/$/, '')
+   const pathname = url.pathname
+      .toLowerCase()
+      .replace(/\/$/, '')
 
-   if (!pathname.startsWith('/api') || pathname === '/api/endpoints') return
+   if (
+      !pathname.startsWith('/api') ||
+      pathname === '/api/endpoints'
+   ) {
+      return
+   }
 
    const config = useRuntimeConfig(event)
    const endpointsMap = config.endpointsMap || {}
-
-   // Cari endpoint berdasarkan pathname yang sudah dinormalisasi
    const endpoint = endpointsMap[pathname]
 
-   // Jika endpoint tidak ditemukan di map, lewati
    if (!endpoint) return
 
-   // 1. CEK ERROR / MAINTENANCE
    if (endpoint.error) {
       return jsonResponse(event, {
          creator: appConfig.watermark.creator,
@@ -27,15 +29,38 @@ export default defineEventHandler(async (event) => {
       }, 503)
    }
 
-   // 2. CEK PREMIUM (API KEY)
+   const query = getQuery(event)
+
+   let body = {}
+   const method = event.method?.toUpperCase()
+
+   if (!['GET', 'HEAD'].includes(method)) {
+      try {
+         body = await readBody(event) || {}
+      } catch {
+         body = {}
+      }
+   }
+
+   const input = {
+      ...query,
+      ...(typeof body === 'object' && body !== null ? body : {})
+   }
+
    if (endpoint.premium) {
-      const query = getQuery(event)
       const apiKeyHeader = getHeader(event, 'x-apikey')
-      const userApiKey = query.apikey || apiKeyHeader
+
+      const userApiKey =
+         apiKeyHeader ||
+         query.apikey ||
+         body?.apikey
 
       const env = getCloudflareEnv(event) || {}
-      // Ambil API Key dari Environment Variables Cloudflare / .env
-      const validApiKey = env.API_KEY || process.env.API_KEY || 'SECRET_API_KEY_ANDA'
+
+      const validApiKey =
+         env.API_KEY ||
+         process.env.API_KEY ||
+         'SECRET_API_KEY_ANDA'
 
       if (!userApiKey || userApiKey !== validApiKey) {
          return jsonResponse(event, {
@@ -46,13 +71,20 @@ export default defineEventHandler(async (event) => {
       }
    }
 
-   // 3. CEK PARAMETER
-   if (endpoint.parameter && endpoint.parameter.length > 0) {
-      const query = getQuery(event)
+   if (
+      Array.isArray(endpoint.parameter) &&
+      endpoint.parameter.length > 0
+   ) {
       const missingParams = []
 
       for (const param of endpoint.parameter) {
-         if (!query[param] || query[param].trim() === '') {
+         const value = input[param]
+
+         if (
+            value === undefined ||
+            value === null ||
+            String(value).trim() === ''
+         ) {
             missingParams.push(param)
          }
       }
