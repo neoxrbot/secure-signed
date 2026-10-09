@@ -9,6 +9,10 @@
             </div>
          </div>
          <div class="d-flex align-items-center gap-2">
+            <NuxtLink to="/whitelist" class="btn btn-outline-secondary btn-icon-only" title="IP Whitelist">
+               <i class="bi bi-shield-check"></i>
+            </NuxtLink>
+
             <button class="btn btn-outline-secondary btn-icon-only" @click="handleBackup" :disabled="isBackingUp"
                title="Download Database Backup">
                <span v-if="isBackingUp" class="spinner-border spinner-border-sm"></span>

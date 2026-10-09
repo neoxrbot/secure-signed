@@ -216,3 +216,58 @@ export async function cleanOldStats(db) {
       "DELETE FROM stats WHERE key LIKE 'stats:hits:%' AND key < ?"
    ).bind(cutoffStr).run()
 }
+
+export async function ensureWhitelistTable(db) {
+   return db.prepare(`
+      CREATE TABLE IF NOT EXISTS ip_whitelist (
+         ip TEXT PRIMARY KEY,
+         note TEXT DEFAULT '',
+         created_at INTEGER NOT NULL
+      )
+   `).run()
+}
+
+export async function getWhitelist(db) {
+   try {
+      const { results } = await db.prepare(
+         'SELECT ip, note, created_at FROM ip_whitelist ORDER BY created_at DESC'
+      ).all()
+      return results || []
+   } catch {
+      await ensureWhitelistTable(db)
+      return []
+   }
+}
+
+export async function getWhitelistSet(db) {
+   try {
+      const { results } = await db.prepare('SELECT ip FROM ip_whitelist').all()
+      return new Set((results || []).map(r => String(r.ip).trim()).filter(Boolean))
+   } catch {
+      await ensureWhitelistTable(db)
+      return new Set()
+   }
+}
+
+export async function addWhitelistIp(db, ip, note = '') {
+   const now = Math.floor(Date.now() / 1000)
+   await ensureWhitelistTable(db)
+   await db.prepare(
+      'INSERT OR REPLACE INTO ip_whitelist (ip, note, created_at) VALUES (?1, ?2, ?3)'
+   ).bind(String(ip).trim(), String(note || '').trim(), now).run()
+   return { ip: String(ip).trim(), note: String(note || '').trim(), created_at: now }
+}
+
+export async function removeWhitelistIp(db, ip) {
+   await ensureWhitelistTable(db)
+   return db.prepare('DELETE FROM ip_whitelist WHERE ip = ?1').bind(String(ip).trim()).run()
+}
+
+export async function isWhitelisted(db, ip) {
+   try {
+      const row = await db.prepare('SELECT 1 FROM ip_whitelist WHERE ip = ?1').bind(String(ip).trim()).first()
+      return !!row
+   } catch {
+      return false
+   }
+}

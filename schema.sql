@@ -40,3 +40,9 @@ CREATE TABLE IF NOT EXISTS notes (
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ip_whitelist (
+    ip TEXT PRIMARY KEY,
+    note TEXT DEFAULT '',
+    created_at INTEGER NOT NULL
+);
