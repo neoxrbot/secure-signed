@@ -1,9 +1,5 @@
 import { getCloudflareEnv } from '../../utils/index.js'
-import {
-   getSignedCdn,
-   recordCdnDownload,
-   cleanExpiredCdn
-} from '../../utils/database.js'
+import { getSignedCdn, recordCdnDownload, cleanExpiredCdn } from '../../utils/database.js'
 
 function isDomainAllowed(domain, allowedPatternsStr) {
    if (!allowedPatternsStr) return true
@@ -362,40 +358,80 @@ export default defineEventHandler(async event => {
          }
       }
 
-      /*
-       * ============================================================
-       * 7. FETCH UPSTREAM
-       *
-       * PENTING:
-       * body TIDAK di-buffer.
-       *
-       * upstreamRes.body langsung diteruskan
-       * ke Response di bawah.
-       * ============================================================
-       */
-
       const targetUrl =
          safeTargetUrl(
             record.target_url
          )
 
-      console.log(
-         '[CDN FETCH]',
-         method,
-         targetUrl,
-         {
-            range
-         }
-      )
+      /*
+       * ============================================================
+       * 7. FETCH UPSTREAM (WITH RETRY)
+       *
+       * If upstream response is not 200, retry up to 3 times
+       * with 3 seconds interval between attempts.
+       *
+       * body is NOT buffered.
+       * ============================================================
+       */
 
-      const upstreamRes = await fetch(
-         targetUrl,
-         {
+      const MAX_RETRIES = 3
+      const RETRY_DELAY_MS = 3000
+
+      const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+      let upstreamRes
+      let lastAttemptInfo = null
+
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+         console.log(
+            '[CDN FETCH]',
             method,
-            headers: forwardHeaders,
-            redirect: 'follow'
+            targetUrl,
+            {
+               range,
+               attempt
+            }
+         )
+
+         upstreamRes = await fetch(
+            targetUrl,
+            {
+               method,
+               headers: forwardHeaders,
+               redirect: 'follow'
+            }
+         )
+
+         if (upstreamRes.status === 200) {
+            lastAttemptInfo = null
+            break
          }
-      )
+
+         lastAttemptInfo = {
+            attempt,
+            status: upstreamRes.status,
+            url: targetUrl
+         }
+
+         console.error(
+            '[CDN UPSTREAM RETRY]',
+            lastAttemptInfo
+         )
+
+         if (attempt < MAX_RETRIES) {
+            await sleep(RETRY_DELAY_MS)
+         }
+      }
+
+      if (lastAttemptInfo) {
+         console.error(
+            '[CDN UPSTREAM ERROR]',
+            {
+               ...lastAttemptInfo,
+               note: 'failed after retry, status is not 200'
+            }
+         )
+      }
 
       /*
        * ============================================================
